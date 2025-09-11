@@ -1,0 +1,929 @@
+---
+title: "The effect of metatarsal osteotomy technique on pain and function for the treatment of metatarsalgia: A pragmatic, registry-embedded prospective randomised trial"
+author: "Corey Scholes"
+affiliation: "EBM Analytics"
+version: 1.0
+date: "2025-Sep-08"
+date-modified: "2025-September-08"
+type: website
+output-dir: docs
+editor: visual
+code-annotations: true
+execute: 
+  echo: true
+  warning: false
+  message: false
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    toc: true
+    number-sections: true
+    code-fold: true
+    
+    
+bibliography: WeilRCT.bib
+---
+
+# Analysis Preamble
+
+## Reporting
+
+
+
+
+## Preparation
+
+Load up required packages in advance. Citations are applied to each library at first use in the text. <!--# Reorder these in order of general appearance -->
+
+```{r}
+#| label: load-packages
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  "ggdag",
+  "knitr",
+  "cardx",
+  "quarto",
+  "gargle",
+  "googledrive",
+  "googlesheets4",
+  "openxlsx2",
+  "tidyverse",
+  "tidytext",
+  "stopwords",
+  "tictoc",
+  "lubridate",
+  "forcats",
+  "gt",
+  "consort",
+  "gtsummary",
+  "ggplot2",
+  "ggdist",
+  "ggsurvfit",
+  "ggfortify",
+  "mice",
+  "patchwork",
+  "naniar",
+  "broom",
+  "broom.helpers",
+  "epoxy",
+  install = TRUE,
+  update = FALSE
+)
+
+```
+
+```{r}
+#| label: tbl-pkgcite
+#| echo: false
+#| tbl-cap: Summary of package usage and citations
+
+# Generate table
+pkgs <- grateful::cite_packages(
+  dependencies = FALSE,
+  output = "table", 
+  out.dir = ".",
+  cite.tidyverse = TRUE,
+  include.RStudio = FALSE,
+  bib.file = "grateful-refs.bib"
+)
+
+knitr::kable(pkgs)
+
+```
+
+
+## Authorisations
+
+Pre-authorise access to registry datasets using the *gargle* package.
+
+```{r}
+#| echo: false
+
+# Set the cache location
+options(gargle_oauth_cache = ".secrets")
+
+# Use the saved token for non-interactive auth
+drive_auth(email = "cscholes@ebma.com.au", 
+          cache = ".secrets")
+```
+
+```{r}
+#| echo: false
+
+options(
+  gargle_oauth_cache = ".secrets",
+  gargle_oauth_email = TRUE
+)
+
+drive_auth(cache = ".secrets", email = TRUE)
+```
+
+
+# Functions for Processing
+
+Include a series of functions to call later in the file for processing data imports.
+
+A general text cleaning function was constructed to apply during first import of raw data files, built on *tidyverse* and *stringr*. The *janitor* package was utilised to clean column names in the resulting dataframe.
+
+```{r}
+#| label: clean-text-func
+
+
+# Generalized text cleaning function
+clean_text <- function(text) {
+  text |> 
+    stringr::str_to_lower() |>
+    stringr::str_squish() |>
+    stringr::str_replace_all("\\.|\\. |\\: |\\, |w\\/", "; ") |>
+    stringr::str_replace_all(";+", "; ") |>
+    stringr::str_remove_all("^;|;$")
+}
+
+```
+
+```{r}
+#| label: bind-clean-func
+
+bind_and_clean <- function(df1, df2, cols = NULL, clean_cols = NULL, clean_fn = clean_text) {
+  # Store the names of the input dataframes
+  df1_name <- deparse(substitute(df1))
+  df2_name <- deparse(substitute(df2))
+  
+  # Bind rows
+  result <- bind_rows(df1, df2)
+  
+  # If cols is specified, select those columns, otherwise keep all columns
+  if (!is.null(cols)) {
+    result <- result |> dplyr::select(all_of(cols))
+  }
+  
+  # Apply text cleaning to specified columns
+  if (!is.null(clean_cols)) {
+    for (col in clean_cols) {
+      if (col %in% names(result)) {
+        result[[col]] <- clean_fn(result[[col]])
+      } else {
+        warning(glue::glue("Column '{col}' not found in dataframe"))
+      }
+    }
+  }
+  
+  # Remove the input dataframes from the parent environment
+  rm(list = c(df1_name, df2_name), envir = parent.frame())
+  
+  # Clean column names for consistency
+  result |> janitor::clean_names(
+    case = "big_camel"
+  )
+}
+
+```
+
+# Title and Abstract
+
+## CONSORT \[1a\] Trial Identification
+
+The title identifies the study as a "prospective controlled trial".
+
+## \[CONSORT \[1b\] Structured Abstract
+
+<!--# Structured summary of trial design, methods, results, and conclusions -->
+
+<!--# P1b: The PRO should be identified in the abstract as a primary or secondary outcome -->
+
+
+
+##  Data sources/measurement
+
+<!--# For each variable of interest, give sources of data and details of methods of assessment (measurement). Describe comparability of assessment methods if there is more than one group -->
+
+Data was sourced directly from the SOFARI registry. Patient and treatment information were entered into the database through the registry interface and compiled into a data cube (snapshot) every quarter. Complications and adverse events captured into an online form (QuestionPro, USA) and linked using record identifier codes. Patient-reported outcomes were collected from the patient through electronic communication (sms, email) of a form link specific to baseline assessment and captured into an online form (QuestionPro, USA) for each questionnaire of interest. PROMs data were also linked back to patient and treatment infromation using record identifier codes.
+
+### Data Import and Preparation
+
+Data was retrieved and formatted using *openxlsx* to retrieve static snapshot files and *googlesheets4* to retrieve live database tables. Text and code output were integrated using the *epoxy* package. Source files were specified and stored as global variables to call on in further functions.
+
+```{r}
+#| label: source-ids
+#| echo: false
+
+SheetIDs <- list(
+  Handover = "https://docs.google.com/spreadsheets/d/1mrG1Oxv3oQbalTlh6xr3kGMZcpOz5m76unqbe0eu_uc/edit"
+)
+
+```
+
+
+```{r}
+#| label: import-studytables
+
+# Authenticate for sheets using the same token
+gs4_auth(token = drive_token())
+
+MasterList <- range_read(
+  ss = SheetIDs$Handover,
+  sheet = "PatientList",
+  col_names = c(
+  "TreatmentID",
+  "SurgicalDataNumberOfRecords",
+  "ComplicationsNumberOfRecords",
+  "AdminControl",
+  "StudyStatus",
+  "ConsentSignedDate",
+  "AffectedSide",
+  "RandomisationGroup",
+  "RandomisationGroupRecode",
+  "GenieID",
+  "FirstName",
+  "LastName",
+  "Sex",
+  "DateOfBirth",
+  "Email",
+  "Mobile",
+  "Postcode",
+  "RegistryStatus",
+  "RegistryStatusNotes",
+  "DateRegistryStatus",
+  "DateTreatment",
+  "12monthEligible",
+  "RegistryTreatmentStatus",
+  "RegistryTreatmentStatusNotes",
+  "DateRegistryTreatmentStatusChange",
+  "TreatmentType",
+  "Facility"
+),
+range = "A2:AA",
+col_types = "ciiccDcccccccDcccccDDcccDcc"
+) |> dplyr::select(
+  -(c(
+    FirstName,
+    LastName,
+    Email,
+    Mobile
+  ))
+) |> dplyr::mutate(
+  StudyStatusClean = stringr::str_split_i(StudyStatus," - ",1),
+  StudyStatusNotes = stringr::str_split_i(StudyStatus," - ",2)
+)
+# 
+# 
+# 
+SurgicalData <- range_read(
+  ss = SheetIDs$Handover,
+  sheet = "SurgicalData",
+  col_names = c(
+  "TreatmentID",
+  "DateTreatment",
+  "Facility",
+  "ProcedureName",
+  "AgeAtTreatment",
+  "TimeStamp",
+  "MetatarsalInvolved",
+  "SecondaryPath1",
+  "SecondaryPath2",
+  "SecondaryPath3",
+  "SecondaryPath4",
+  "SecondaryPath5",
+  "SecondaryPath6",
+  "SecondaryPath7",
+  "SecondaryPath8",
+  "AdjunctProc1",
+  "AdjunctProc2",
+  "AdjunctProc3",
+  "AdjunctProc4",
+  "AdjunctProc5",
+  "AdjunctProc6",
+  "AdjunctProc7",
+  "AdjunctProc8"
+),
+range = "A2:W",
+col_types = "cDccn?icccccccccccccccc"
+)
+#
+#
+Complications <- range_read(
+  ss = SheetIDs$Handover,
+  sheet = "Complications",
+  col_names = c(
+  "TreatmentID",
+  "TimeStamp",
+  "ComplicationID",
+  "ComplicationOccurrence",
+  "DateOccurrence",
+  "ComplicationNature",
+  "ComplicationTreatment",
+  "DateReoperation"
+),
+range = "A2:H",
+col_types = "c?ccDccD"
+)
+
+PROMSInput <- range_read(
+  ss = SheetIDs$Handover,
+  sheet = "PROMS",
+  col_names = TRUE,
+  range = "A1:JH",
+  col_types = "?"
+)
+
+
+
+```
+
+The self-assessed comorbidity score had to be added to the dataset by calculating from individual responses included in the registry snapshot. The scores were then added to the analysis master table.
+
+```{r}
+# Apply to your data
+MasterSRCQ <- PROMSInput |> 
+  dplyr::select(
+    TreatmentID,
+    starts_with("Comorb")
+  ) |> 
+  mutate(
+    TreatmentID = as.character(TreatmentID),
+    across(starts_with("Comorb"), 
+           ~ case_when(
+             is.na(.) ~ NA,
+             . == "I do not have the problem" ~ 0,
+             . == "I have the problem" ~ 1,
+             . == "I am receiving treatment for it" | 
+               . == "I have the problem, I am receiving treatment for it" ~ 2,
+             . == "The problem limits my activities" | 
+               . == "I have the problem, I am receiving treatment for it, The problem limits my activities" ~ 3,
+             TRUE ~ NA_real_  # Add default case
+           )
+    )
+  ) |> 
+  mutate(
+    SRCQTotalScore = rowSums(across(where(is.numeric)))
+  )
+```
+
+
+
+Scoring DASS-21
+
+
+```{r}
+
+MasterDASS <- PROMSInput |> dplyr::select(
+  TreatmentID,
+  contains("DASS"),
+  -(contains("PMS"))
+) |> mutate(across(starts_with("DASS21Q"), ~ case_when(
+    .x == "Did not apply to me at all" ~ 0,
+    .x == "Applied to me to some degree, or some of the time" ~ 1,
+    .x == "Applied to me to a considerable degree, or a good part of the time" ~ 2,
+    .x == "Applied to me very much, or most of the time" ~ 3,
+    TRUE ~ NA_real_
+  ))
+) |> mutate(
+  DASS_Depression = as.numeric((DASS21Q3_Preop + DASS21Q5_Preop + DASS21Q10_Preop + 
+                           DASS21Q13_Preop + DASS21Q16_Preop + DASS21Q17_Preop + 
+                           DASS21Q21_Preop)*2),
+  DASS_Anxiety = as.numeric((DASS21Q2_Preop + DASS21Q4_Preop + DASS21Q7_Preop + 
+                       DASS21Q9_Preop + DASS21Q15_Preop + DASS21Q19_Preop + 
+                       DASS21Q20_Preop)*2),
+  DASS_Stress = as.numeric((DASS21Q1_Preop + DASS21Q6_Preop + DASS21Q8_Preop + 
+                      DASS21Q11_Preop + DASS21Q12_Preop + DASS21Q14_Preop + 
+                      DASS21Q18_Preop)*2)
+  )
+
+```
+
+Extract pain management responses
+
+
+```{r}
+
+# Are you using any medications to cope with the pain in your feet? [Yes|No]
+# Do you use any other methods to cope with the pain, not including medications? [Yes|No]
+# 
+
+
+
+MasterPMS <- PROMSInput |> dplyr::select(
+  TreatmentID,
+  contains("DASS") &  contains("PMS")
+)
+
+```
+
+
+# Participant flow
+
+
+```{r}
+
+#| label: consort-prep
+
+
+CONSORTFlow <- MasterList |> dplyr::left_join(
+  SurgicalData |> dplyr::select(
+    TreatmentID,
+    ProcedureName
+  ),
+  by = "TreatmentID" 
+) |> rename(
+  trialno = "TreatmentID",
+  arm = "RandomisationGroupRecode"
+) |> mutate(
+  exclusion1 = case_when(
+    SurgicalDataNumberOfRecords > 0 & StudyStatusClean == "Consented" ~ NA_character_,
+    StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"hospital") ~ "Out-of-network hospital",
+    StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"(?!.*plan)dnr|osteotomy|bilateral") ~ "No osteotomy procedure",
+    StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"mistake") ~ "Accessory record",
+    StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"public") ~ "Public patient",
+    .default = NA_character_
+  ),
+  induction = if_else(
+    !is.na(exclusion1),
+    NA_character_,
+    trialno
+  ),
+  exclusion2 = case_when(
+    !is.na(induction) & StudyStatusClean == "Invited" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"declined|confirmed") ~ "Declined to participate",
+    !is.na(induction) & StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"no consent") ~ "Declined to participate",
+    !is.na(induction) & StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"randomised") ~ "Not randomised",
+    !is.na(induction) & StudyStatusClean == "Excluded" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"surgery(?!.*bilateral)|occur|planned") ~ "Surgery cancelled",
+    !is.na(arm) & !is.na(induction) & StudyStatusClean == "Consented" & stringr::str_detect(stringr::str_to_lower(StudyStatusNotes),"withdrawn") ~ "Consent withdrawn",
+    .default = NA_character_
+  ),
+   subjid_dosed = if_else(
+     is.na(exclusion1) & is.na(exclusion2) & !is.na(ProcedureName),
+     trialno,
+     NA_character_
+   ),
+  subjid_notdosed = if_else(
+    is.na(exclusion1) & is.na(exclusion2) & is.na(ProcedureName),
+    "Not dosed",
+    NA_character_
+  ),
+  followup = if_else(
+    !is.na(subjid_dosed) & is.na(subjid_notdosed),
+    trialno,
+    NA_character_
+  ),
+  DaysEarlyStop1 = as.numeric(difftime(DateRegistryStatus,DateTreatment, units = "days")),
+  DaysEarlyStop2 = as.numeric(difftime(DateRegistryTreatmentStatusChange,DateTreatment, units = "days")),
+  StatusComb = case_when(
+    !is.na(followup) & !is.na(RegistryTreatmentStatusNotes) & is.na(RegistryStatusNotes) ~ RegistryTreatmentStatusNotes,
+    !is.na(followup) & is.na(RegistryTreatmentStatusNotes) & !is.na(RegistryStatusNotes) ~ RegistryStatusNotes,
+    !is.na(followup) & `12monthEligible` == "No" ~ "Insufficient followup"
+  ),
+  mITT = case_when(
+    !is.na(followup) & is.na(StatusComb) ~ followup,
+    !is.na(followup) & !is.na(StatusComb) & (DaysEarlyStop1 < 306 | DaysEarlyStop2 < 306) ~ NA_character_,
+    .default = followup
+  ),
+  lost_followup = if_else(
+    !is.na(followup) & is.na(mITT),
+    RegistryTreatmentStatus,
+    NA_character_
+  )
+)
+
+```
+
+
+
+
+```{r}
+#| label: fig-consort
+#| fig-cap: "Flow chart of recruitment and followup for osteotomy trial"
+
+
+ConsortChart <- consort::consort_plot(data = CONSORTFlow,
+                  orders = c(trialno = "Population",
+                             exclusion1    = "Excluded",
+                             induction   = "Invited",
+                             exclusion2    = "Excluded",
+                             arm     = "Randomized patient",
+                             subjid_notdosed = "Not dosed",
+                             lost_followup = "Not eligible for analysis",
+                             mITT = "miTT Analysis"),
+                  side_box = c("exclusion1", "exclusion2", "lost_followup"),
+                  allocation = "arm",
+                  labels = c("1" = "Screening", "2" = "Invitation",
+                             "3" = "Randomization", 
+                             "5" = "12m followup"),
+                  cex = 0.7)
+
+
+knitr::knit_print(ConsortChart)
+
+```
+
+
+#Build MasterTable
+
+```{r}
+
+# Surgical Data
+# 
+# 
+SurgicalData2 <- SurgicalData |> tidyr::unite(
+  "SecondaryPathComb",
+  SecondaryPath1:SecondaryPath8,
+  sep = "; ",
+  na.rm = TRUE,
+  remove = TRUE
+) |> tidyr::unite(
+  "AdjunctProcComb",
+  AdjunctProc1:AdjunctProc8,
+  sep = "; ",
+  na.rm = TRUE,
+  remove = TRUE
+) |> mutate(
+    TimeStampParse1 = stringr::str_remove(TimeStamp,"GMT"),
+    TimeStampParse2 = str_replace(
+      TimeStampParse1, 
+      "^\\w{3} (\\d{2}) (\\w{3}), (\\d{2}:\\d{2}:\\d{2})\\s+(\\d{4})$",
+      "\\1 \\2 \\4 \\3"
+    ),
+    # Then parse with lubridate
+    TimeStampParse3 = dmy_hms(TimeStampParse2),
+    TimeStampParse =  date(with_tz(TimeStampParse3, "Australia/Sydney")),
+    FormFillDelay = as.numeric(difftime(TimeStampParse,DateTreatment, units = "days")),
+  ) |> dplyr::select(
+    -(c(
+      TimeStamp,
+    TimeStampParse1,
+    TimeStampParse2, 
+    TimeStampParse3
+    ))
+    )  # Remove the intermediate column if not needed
+
+
+```
+
+Complications and Reoperations
+
+```{r}
+
+MasterComplic1 <- Complications |> dplyr::filter(
+  stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan", negate = TRUE)
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID,
+    DateTreatment
+  ),
+  by = "TreatmentID",
+  relationship = "many-to-many"
+) |> mutate(
+  OccurDelay = as.numeric(difftime(DateOccurrence,DateTreatment,units = "days")),
+  ReopDelay = as.numeric(difftime(DateReoperation,DateTreatment,units = "days")),
+) |> filter(
+  !is.na(DateTreatment),
+ between(OccurDelay, 0, 308)
+) |> distinct(
+  ComplicationID,
+  .keep_all = TRUE
+)
+
+MasterComplic1b <- summarise(
+  MasterComplic1,
+  .by = TreatmentID,
+  Count = n()
+)
+
+
+MasterComplic2 <- Complications |> dplyr::filter(
+  stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan(?!.*tar)")
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID,
+    DateTreatment
+  ),
+  by = "TreatmentID",
+  relationship = "many-to-many"
+) |> mutate(
+  OccurDelay = as.numeric(difftime(DateOccurrence,DateTreatment,units = "days")),
+  ReopDelay = as.numeric(difftime(DateReoperation,DateTreatment,units = "days")),
+) |> filter(
+  !is.na(DateTreatment),
+ between(OccurDelay, 0, 308)
+) |> distinct(
+  ComplicationID,
+  .keep_all = TRUE
+)
+
+MasterComplic2b <- summarise(
+  MasterComplic2,
+  .by = TreatmentID,
+  Count = n()
+)
+
+```
+
+
+```{r}
+
+
+MasterTable <- CONSORTFlow |> dplyr::filter(
+  !is.na(mITT)
+) |> dplyr::select(
+  -(c(
+    exclusion1:mITT,
+    lost_followup
+  ))
+) |> rename(
+  TreatmentID = "trialno"
+) |> left_join(
+  MasterDASS |> dplyr::select(
+    TreatmentID,
+    DASS_Depression:DASS_Stress
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterSRCQ |> dplyr::select(
+    TreatmentID,
+    SRCQTotalScore
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)),
+  by = "TreatmentID"
+) |> left_join(
+  PROMSInput |> dplyr::select(
+    TreatmentID,
+    contains("VR12") & contains("Physical|Mental"),
+    contains("DASS") & contains("PMS"),
+    SmokingStatus_Preop,
+    PCSSF_TotalScore_Preop,
+    FAOS_Pain_TotalScore_Preop,
+    FAOS_Pain_TotalScore_3months,
+    FAOS_Pain_TotalScore_6months,
+    FAOS_Pain_TotalScore_12months,
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)),
+  by = "TreatmentID"
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID:AdjunctProcComb,
+    -DateTreatment,
+    -ProcedureName,
+    -Facility
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterComplic1b |> rename(
+    ComplicationN = "Count"
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterComplic2b |> rename(
+    WireRemoval = "Count"
+  ),
+  by = "TreatmentID"
+) |> mutate(
+  ComplicationOccur = if_else(
+    is.na(ComplicationN),
+    "No",
+    "Yes"
+  ),
+  WiresRemoved = if_else(
+    is.na(WireRemoval),
+    "No",
+    "Yes"
+  )
+) |> mutate(
+  PatientID = stringr::str_split_i(TreatmentID,"\\.",1),
+  NoSecondaryPath = if_else(SecondaryPathComb == "None","None","No"),
+  HalluxRigidus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"rigidus"),"Yes","No"),
+  HalluxValgus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"valgus"),"Yes","No"),
+  MTPInstability = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"mtp.*instability"),"Yes","No"),
+  Deformity = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"(dip|pip).*deformity"),"Yes","No"),
+  Neuroma = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"neuroma"),"Yes","No"),
+  Sex2 = if_else(
+    Sex == "M",
+    "Male",
+    "Female"
+  )
+  )
+
+
+```
+
+
+
+# Summary tables
+
+
+```{r}
+#| label: tbl-summary
+#| tbl-cap: "Descriptives of study cohort"
+
+
+TableSummary <- gtsummary::tbl_summary(
+  MasterTable,
+  include = c(
+    arm,
+    AgeAtTreatment,
+    Sex2,
+    TreatmentType,
+    Facility,
+    DASS_Depression:DASS_Stress,
+    SRCQTotalScore,
+    SmokingStatus_Preop,
+    PCSSF_TotalScore_Preop,
+    MetatarsalInvolved,
+    NoSecondaryPath:Neuroma,
+    ComplicationOccur,
+    WiresRemoved
+  ),
+  by = "arm",
+  label = list(
+    arm = "Group",
+    Sex2 = "Sex",
+    SmokingStatus_Preop = "Smoking",
+    PCSSF_TotalScore_Preop = "Pain Catastrophising",
+    ComplicationOccur = "Complication"
+  ),
+  type = list(
+  Sex2 ~ "dichotomous",
+  NoSecondaryPath ~ "dichotomous",
+  HalluxRigidus  ~ "dichotomous",
+  HalluxValgus ~ "dichotomous",
+  MTPInstability ~ "dichotomous",
+  Deformity ~ "dichotomous",
+  Neuroma ~ "dichotomous",
+  ComplicationOccur ~ "dichotomous",
+  WiresRemoved ~ "dichotomous"
+),
+value = list(
+  Sex2 = "Female",
+  NoSecondaryPath ~ "None",
+  HalluxRigidus  ~ "Yes",
+  HalluxValgus ~ "Yes",
+  MTPInstability ~ "Yes",
+  Deformity ~ "Yes",
+  Neuroma ~ "Yes",
+  ComplicationOccur ~ "Yes",
+  WiresRemoved ~ "Yes"
+)
+)
+
+
+knitr::knit_print(TableSummary)
+
+
+```
+
+
+
+# Missingness
+
+
+```{r}
+#| label: define-analysis-set
+# Slice down to analysis set (simple for now)
+# 
+# 
+
+MasterAnalysis <- MasterTable |> dplyr::select(
+  TreatmentID,
+  PatientID,
+  AgeAtTreatment,
+  Sex2,
+  arm,
+  SRCQTotalScore,
+  SmokingStatus_Preop,
+  MetatarsalInvolved,
+  HalluxRigidus,
+  HalluxValgus,
+  Deformity,
+  DASS21PMSQ1_12months,
+  FAOS_Pain_TotalScore_Preop,
+  FAOS_Pain_TotalScore_12months
+) |> mutate(
+  Group = forcats::fct(arm, levels = c("A","B")),
+  Sex2 = forcats::fct(Sex2, levels = c("Male","Female")),
+  SmokingStatus1 = if_else(
+    SmokingStatus_Preop == "Never smoked",
+    "No",
+    "Yes"
+  ),
+  SmokingHistory = forcats::fct(
+   SmokingStatus1,levels = c("No","Yes")),
+  MetatarsalInvolved = as.character(if_else(
+    MetatarsalInvolved > 2,
+    3,
+    MetatarsalInvolved
+  )),
+  HalluxRigidus = forcats::fct(HalluxRigidus, levels = c("No","Yes")),
+  HalluxValgus = forcats::fct(HalluxValgus, levels = c("No","Yes")),,
+  Deformity = forcats::fct(Deformity, levels = c("No","Yes")),
+  DASS21PMSQ1_12months = forcats::fct(DASS21PMSQ1_12months, levels = c("No","Yes"))
+) |> dplyr::select(
+  -SmokingStatus_Preop,
+  -SmokingStatus1,
+  -arm
+)
+
+```
+
+```{r}
+#| label: fig-missingness
+#| fig-cap: "Patterns of missingness across analysis variables"
+
+vis_miss(MasterAnalysis)
+
+```
+
+```{r}
+
+predM <- mice::make.predictorMatrix(MasterAnalysis |> dplyr::select(-MetatarsalInvolved))
+
+# Exclude ID and non-predictive variables
+predM[,"PatientID"] <- 0 
+predM["PatientID",] <- 0
+predM[,"TreatmentID"] <- 0
+predM["TreatmentID",] <- 0
+
+# Create method vector
+meth <- mice::make.method(MasterAnalysis |> dplyr::select(-MetatarsalInvolved))
+
+# Create visit sequence
+visitSeq <- mice::make.visitSequence(MasterAnalysis)
+
+visitSeq <- c(
+  "TreatmentID",
+  "PatientID",
+  "AgeAtTreatment",
+  "Sex2",
+  "Group",
+  "SRCQTotalScore",
+  "SmokingHistory",
+  "HalluxRigidus",
+  "HalluxValgus",
+  "Deformity",
+  "DASS21PMSQ1_12months",
+  "FAOS_Pain_TotalScore_Preop",
+  "FAOS_Pain_TotalScore_12months"
+)
+
+# Set methods - only for variables that need imputation
+# meth["PatientID"] <- ""           # Don't impute ID
+# meth["TreatmentID"] <- ""           # Don't impute ID
+# meth["AgeAtInitialExam"] <- ""    # Don't impute age
+# meth["Sex2"] <- ""    # Don't impute sex
+# meth["HalluxRigidus"] <- ""    # Don't impute
+# meth["HalluxValgus"] <- ""           # Don't impute
+# meth["Deformity"] <- ""           # Don't impute
+
+
+
+
+
+
+```
+
+```{r}
+
+ MasterImp <- mice::mice(
+    MasterAnalysis,
+    maxit = 10,  # Start with just 1 iteration to test
+    seed = 4218,
+    m = 20,      # Fewer imputations for testing
+    printFlag = FALSE,
+    predictorMatrix = predM,
+    visitSequence = visitSeq,
+    method = meth
+  )
+
+```
+
+
+#Model Analysis
+
+```{r}
+
+StudyModel <- with(
+  MasterImp,
+  exp = lm(FAOS_Pain_TotalScore_12months ~ Group + FAOS_Pain_TotalScore_Preop + AgeAtTreatment + Sex2 + SRCQTotalScore)
+)
+
+```
+
+
+
+```{r}
+
+
+ModelSummary <- gtsummary::tbl_regression(
+  StudyModel,
+  show_single_row = c(Sex2,Group)
+)
+
+
+knitr::knit_print(ModelSummary)
+
+
+```
+
+
+# Secondary Analysis - Complications
+
