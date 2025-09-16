@@ -10,7 +10,7 @@ output-dir: docs
 editor: visual
 code-annotations: true
 execute: 
-  echo: true
+  echo: false
   warning: false
   message: false
 format:
