@@ -40,6 +40,7 @@ Load up required packages in advance. Citations are applied to each library at f
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
+  "marginaleffects",
   "wordcloud",
   "ggdag",
   "knitr",
