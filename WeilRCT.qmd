@@ -27,6 +27,8 @@ bibliography: WeilRCT.bib
 
 # Analysis Preamble
 
+The following is a preliminary analysis of the randomised trial described in the published protocol 
+
 ## Reporting
 
 
@@ -203,19 +205,6 @@ ReplaceTermFun <- function(String) {
   }
 }
 ```
-
-
-# Title and Abstract
-
-## CONSORT \[1a\] Trial Identification
-
-The title identifies the study as a "prospective controlled trial".
-
-## \[CONSORT \[1b\] Structured Abstract
-
-<!--# Structured summary of trial design, methods, results, and conclusions -->
-
-<!--# P1b: The PRO should be identified in the abstract as a primary or secondary outcome -->
 
 
 
@@ -1048,9 +1037,7 @@ MasterAnalysis <- MasterTable |> dplyr::select(
   Deformity,
   DASS21PMSQ1_12months,
   FAOS_Pain_TotalScore_Preop,
-  FAOS_Pain_TotalScore_12months,
-  Infection:Other,
-  OccurDelay
+  FAOS_Pain_TotalScore_12months
 ) |> mutate(
   Group = forcats::fct(arm, levels = c("A","B")),
   Sex2 = forcats::fct(Sex2, levels = c("Male","Female")),
@@ -1071,10 +1058,14 @@ MasterAnalysis <- MasterTable |> dplyr::select(
   Deformity = forcats::fct(Deformity, levels = c("No","Yes")),
   DASS21PMSQ1_12months = forcats::fct(DASS21PMSQ1_12months, levels = c("No","Yes"))
 ) |> dplyr::select(
-  -SmokingStatus_Preop,
-  -SmokingStatus1,
-  -arm
+  -c(
+  SmokingStatus_Preop,
+  SmokingStatus1,
+  arm
+  
 )
+)
+
 
 ```
 
@@ -1156,6 +1147,8 @@ visitSeq <- c(
 
 # Primary Analysis
 
+
+
 ```{r}
 #| label: primary-analysis-1
 
@@ -1170,7 +1163,8 @@ StudyModel <- with(
 
 
 ```{r}
-#| label: primary-analysis-2
+#| label: tbl-primary
+#| tbl-cap: "Adjusted comparison between groups for FAOS Pain at 12 month followup"
 
 ModelSummary <- gtsummary::tbl_regression(
   StudyModel,
@@ -1179,6 +1173,55 @@ ModelSummary <- gtsummary::tbl_regression(
 
 
 knitr::knit_print(ModelSummary)
+
+
+```
+
+
+Predictions were generated from the model and summarised.
+
+```{r}
+#| label: model-predictions
+
+# Calculate marginal means
+FAOSPredict <- marginaleffects::predictions(
+  StudyModel,
+  type = "response"
+  )
+
+```
+
+
+```{r}
+#| label: fig-model-predicted
+#| fig-cap: "Model predicted FAOS-Pain at 12 months compared between groups"
+
+FAOSPlot <- ggplot(data = FAOSPredict, mapping = aes(y = Group, x = FAOS_Pain_TotalScore_12months)) + 
+  stat_slabinterval(aes(thickness = after_stat(pdf*n)), scale = 0.7) +
+  stat_dotsinterval(side = "bottom", scale = 0.7, slab_linewidth = NA) +
+  scale_fill_brewer(palette = "Set2") +
+  ggtitle('FAOS Predicted by Group')
+
+knitr::knit_print(FAOSPlot)
+```
+
+```{r}
+#| label: tbl-modelpredicted
+#| tbl-cap: "Model predicted FAOS at 12 months compared between groups"
+
+TablePredict <- gtsummary::tbl_summary(
+  FAOSPredict,
+  include = c(
+    FAOS_Pain_TotalScore_12months,
+    Group
+  ),
+  by = "Group",
+  statistic = list(
+    everything() ~ "{mean} ({sd})"
+  )
+) |> add_overall()
+
+knitr::knit_print(TablePredict)
 
 
 ```
