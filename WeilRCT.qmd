@@ -4,13 +4,13 @@ author: "Corey Scholes"
 affiliation: "EBM Analytics"
 version: 1.0
 date: "2025-Sep-08"
-date-modified: "2025-September-08"
+date-modified: "2025-September-17"
 type: website
 output-dir: docs
 editor: visual
 code-annotations: true
 execute: 
-  echo: false
+  echo: true
   warning: false
   message: false
 format:
@@ -19,22 +19,39 @@ format:
     embed-resources: true
     toc: true
     number-sections: true
-    code-fold: false
+    code-fold: true
     
     
 bibliography: WeilRCT.bib
-
 ---
 
 # Analysis Preamble
 
-The following is a preliminary analysis of the randomised trial described in the published protocol
+The following is a preliminary analysis of the randomised trial described in the published protocol [@fatima2022]. The aims of this analysis were to;
+
+::: {#objectives}
+> The primary objective of this study is to determine, in patients electing to undergo surgical intervention for propulsive metatarsalgia, whether wedge-cut osteotomy compared to flat-cut Weil (with or without adjunct pro- cedures) is associated with increased pain relief during activities of daily living up to 12 months postoperatively. The secondary objective of this study is to determine whether a lower incidence of procedure-specific compli- cations (floating toe or stiffness) at up to 12 months of follow-up is associated with the wedge-cut procedure, compared to the flat-cut Weil.
+:::
+
+## 
+
+The primary objective of this study is to determine, in patients electing to undergo surgical intervention for propulsive metatarsalgia, whether wedge-cut osteotomy
+
+compared to flat-cut Weil (with or without adjunct pro- cedures) is associated with increased pain relief during
+
+activities of daily living up to 12 months postoperatively. The secondary objective of this study is to determine
+
+whether a lower incidence of procedure-specific compli- cations (floating toe or stiffness) at up to 12 months of
+
+follow-up is associated with the wedge-cut procedure, compared to the flat-cut Weil.
 
 ## Reporting
 
+The methods and results are reported with a focus on primary and secondary outcomes. Additional context as per CONSORT [@Schulz2010] has been reserved for a more comprehensive report of the study. It should be noted that the CONSORT statement has since been updated [@Hopewell2025] and the final version of the study analysis will likely need to conform to the new statement, which may not align fully with the published protocol for this study.
+
 ## Preparation
 
-Load up required packages in advance. Citations are applied to each library at first use in the text. <!--# Reorder these in order of general appearance -->
+The relevant packages required for the analysis were loaded in advance.
 
 ```{r}
 #| label: load-packages
@@ -50,11 +67,9 @@ pacman::p_load(
   "gargle",
   "googledrive",
   "googlesheets4",
-  "openxlsx2",
   "tidyverse",
   "tidytext",
   "stopwords",
-  "tictoc",
   "lubridate",
   "forcats",
   "gt",
@@ -62,8 +77,6 @@ pacman::p_load(
   "gtsummary",
   "ggplot2",
   "ggdist",
-  "ggsurvfit",
-  "ggfortify",
   "mice",
   "patchwork",
   "naniar",
@@ -80,7 +93,7 @@ pacman::p_load(
 #| label: tbl-pkgcite
 #| echo: false
 #| tbl-cap: Summary of package usage and citations
-#| eval: false
+#| eval: true
 
 # Generate table
 pkgs <- grateful::cite_packages(
@@ -96,9 +109,11 @@ knitr::kable(pkgs)
 
 ```
 
+The packages in use for this analysis (so far) are outlined in @tbl-pkgcite.
+
 ## Authorisations
 
-Pre-authorise access to registry datasets using the *gargle* package.
+Access to the study handover file was pre-authorised using the *gargle* and *googledrive* packages.
 
 ```{r}
 #| label: authorisation-1
@@ -126,9 +141,7 @@ drive_auth(cache = ".secrets", email = TRUE)
 
 # Functions for Processing
 
-Include a series of functions to call later in the file for processing data imports.
-
-A general text cleaning function was constructed to apply during first import of raw data files, built on *tidyverse* and *stringr*. The *janitor* package was utilised to clean column names in the resulting dataframe.
+A series of functions were specified to call later in the file for processing data imports. A general text cleaning function was constructed to apply during first import of raw data files, built on *tidyverse* and *stringr*. The *janitor* package was utilised to clean column names in the resulting dataframe.
 
 ```{r}
 #| label: clean-text-func
@@ -184,6 +197,8 @@ bind_and_clean <- function(df1, df2, cols = NULL, clean_cols = NULL, clean_fn = 
 
 ```
 
+A function to replace abbreviated terms in complications and descriptions was constructed.
+
 ```{r}
 #| label: replace-term-func
 
@@ -203,15 +218,15 @@ ReplaceTermFun <- function(String) {
 }
 ```
 
-## Data sources/measurement
+# Data sources/measurement
 
 <!--# For each variable of interest, give sources of data and details of methods of assessment (measurement). Describe comparability of assessment methods if there is more than one group -->
 
-Data was sourced directly from the SOFARI registry. Patient and treatment information were entered into the database through the registry interface and compiled into a data cube (snapshot) every quarter. Complications and adverse events captured into an online form (QuestionPro, USA) and linked using record identifier codes. Patient-reported outcomes were collected from the patient through electronic communication (sms, email) of a form link specific to baseline assessment and captured into an online form (QuestionPro, USA) for each questionnaire of interest. PROMs data were also linked back to patient and treatment infromation using record identifier codes.
+Data was sourced directly from the [study handover file](https://docs.google.com/spreadsheets/d/1mrG1Oxv3oQbalTlh6xr3kGMZcpOz5m76unqbe0eu_uc/edit?usp=sharing), which was combined from the SOFARI registry snapshot and the study masterfile used for tracking during the recruitment and data collection phase. Patient and treatment information were entered into the database through the registry interface and compiled into a data cube (snapshot) every quarter. Complications and adverse events were captured into an online form (QuestionPro, USA) and linked using record identifier codes. Patient-reported outcomes were collected from the patient through electronic communication (sms, email) of a form link specific to baseline assessment and captured into an online form (QuestionPro, USA) for each questionnaire of interest. An additional link was sent specific for the study (DASS questionnaire) at the scheduled followups. PROMs data were also linked back to patient and treatment infromation using record identifier codes.
 
-### Data Import and Preparation
+## Data Import and Preparation
 
-Data was retrieved and formatted using *openxlsx* to retrieve static snapshot files and *googlesheets4* to retrieve live database tables. Text and code output were integrated using the *epoxy* package. Source files were specified and stored as global variables to call on in further functions.
+Data was retrieved and formatted using *googlesheets4* to retrieve live database tables. Text and code output were integrated using the *epoxy* package. Source files were specified and stored as global variables to call on in further functions.
 
 ```{r}
 #| label: source-ids
@@ -340,7 +355,7 @@ PROMSInput <- range_read(
 
 ```
 
-The self-assessed comorbidity score had to be added to the dataset by calculating from individual responses included in the registry snapshot. The scores were then added to the analysis master table.
+The self-assessed comorbidity score [@Sangha2003] had to be added to the dataset by calculating from individual responses included in the registry snapshot. The scores were then added to the analysis master table.
 
 ```{r}
 #| label: srcq-score
@@ -372,7 +387,7 @@ MasterSRCQ <- PROMSInput |>
   )
 ```
 
-Scoring DASS-21
+The DASS-21 responses were also scored as per [@henry2005] with the final score for each subscale (Depression, Anxiety and Stress) doubled to align with the full DASS score distributions.
 
 ```{r}
 #| label: dass21-score
@@ -403,7 +418,7 @@ MasterDASS <- PROMSInput |> dplyr::select(
 
 ```
 
-Extract pain management responses
+Additional pain management strategies (medications and non-pharmacological measures) were extracted at each timepoint and compiled for further analysis.
 
 ```{r}
 #| label: pain-management
@@ -420,7 +435,9 @@ MasterPMS <- PROMSInput |> dplyr::select(
 
 ```
 
-## Prepare Adverse Events
+## Surgical data
+
+Intraoperative data was captured via electronic form and compiled for futher analysis by condensing secondary pathology and adjunct procedures responses into one column respectively.
 
 ```{r}
 #| label: surgical-data
@@ -461,6 +478,10 @@ SurgicalData2 <- SurgicalData |> tidyr::unite(
 
 
 ```
+
+## Prepare Adverse Events
+
+Adverse events were processed by separating events into planned removal of k-wires versus unexpected events such as infection, vein thrombosis or condition recurrence. Text processing was used to replace abbreviated terms, standardise phrasing and filter duplicate entries for the same treatment record.
 
 ```{r}
 #| label: adverse-events-1
@@ -533,7 +554,7 @@ MasterComplic2b <- summarise(
 
 ```
 
-The free-text describing the nature of the complication or adverse event was pre-processed using *tidytext* (v`{r} utils::packageVersion(pkg = "tidytext")`)[@tidytext] to split into word tokens and remove stop words.
+The free-text describing the nature of the complication or adverse event was pre-processed using *tidytext* to split into word tokens and remove stop words.
 
 ```{r}
 #| label: adverse-events-3
@@ -557,7 +578,7 @@ ComplicTable1 <- tidytext::unnest_tokens(
 
 ```
 
-Terms with less than four characters were extracted and reproduced in an external file for manual spelling of abbreviations. Terms with digits (e.g. L5) were removed.
+Terms with less than four characters were extracted and reproduced in an external file for manual spelling of abbreviations.
 
 ```{r}
 #| label: adverse-events-4
@@ -578,6 +599,8 @@ TargetTerms <- ComplicTable1 |> dplyr::select(
   )
 
 ```
+
+Terms identified for replacement were written to an external file for manual input of expanded definitions.
 
 ```{r}
 #| label: adverse-events-5
@@ -676,6 +699,8 @@ Figure2 <- ComplicTable2 |> filter(!Term3 == "treatment") |>
 knitr::knit_print(Figure2)
 ```
 
+The description of the complication for each entry was recompiled from the cleaned text and joined back to the master table. Duplicate entries were filtered from the dataset.
+
 ```{r}
 #| label: adverse-events-8
 
@@ -695,23 +720,28 @@ MasterComplic1c <- left_join(
 
 ```
 
+The complication descriptions were manually reviewed and categorised based on the responses retrieved. These were - infection, malalignment, deep vein thrombosis and circulation issues, recurrent or persistent forefoot symptoms, with the remaining cases classified as other (e.g. subsequent ankle fracture and orif).
+
 ```{r}
 #| label: adverse-events-9
-# Finalise compliations master
+# Finalise complications master
 # 
-# 
+
 
 MasterComplic3 <- MasterComplic1c |> dplyr::mutate(
   Infection = if_else(stringr::str_detect(Term4, "keflex|infect|collection|abscess|eschar"),TRUE,FALSE),
   Malalignment = if_else(stringr::str_detect(Term4, "extension|sit|sat|flexion|contracture|varus|valgus|taping"),TRUE,FALSE),
   DVT_Circulation = if_else(stringr::str_detect(Term4, "thromb|stenosis"),TRUE,FALSE),
   Symptoms = if_else(stringr::str_detect(Term4, "ongoing|discomfort|swelling|pain"),TRUE,FALSE),
-  Other = if_else(!Infection & !Malalignment & !DVT_Circulation & !Symptoms, TRUE, FALSE)
+  Other = if_else(!Infection & !Malalignment & !DVT_Circulation & !Symptoms, TRUE, FALSE),
+  AnyComplication = if_any(c(Infection, Malalignment, DVT_Circulation, Symptoms, Other))
 )
 
 ```
 
 # Participant flow
+
+A dataframe was prepared to derive the CONSORT flow chart as per the protocol [@fatima2022].
 
 ```{r}
 #| label: consort-prep
@@ -810,7 +840,11 @@ knitr::knit_print(ConsortChart)
 
 ```
 
+The flowchart @fig-consort shows dropouts for Group A which included one case that presented with new pathology that was followed in a subsequent treatment record and two patients that opted out of receiving PROMs reminders from the registry system.
+
 ## Finalise Master Table
+
+The master table of the eligible cases for analysis were compiled by filtering the consort flowchart input dataframe for those that were eligible for final followup as part of the intention-to-treat analysis (mITT).
 
 ```{r}
 #| label: master-table
@@ -900,19 +934,21 @@ MasterTable <- CONSORTFlow |> dplyr::filter(
       TreatmentID,
       OccurDelay,
       ComplicationTreatment,
-      Infection:Other
+      Infection:AnyComplication
     ) |> group_by(TreatmentID) |> slice_min(
       OccurDelay
     ) |> ungroup(),
     by = "TreatmentID"
   ) |> dplyr::mutate(
-    across(c(Infection:Other), ~ replace_na(.x, FALSE))
+    across(c(Infection:AnyComplication), ~ replace_na(.x, FALSE))
   )
 
 
 ```
 
 # Summary tables
+
+Characteristics of cases in both groups was described in a table using *gtsummary*. Age, sex, comorbidity burden, smoking history and baseline PROMs were combined with facility, secondary pathology.
 
 ```{r}
 #| label: tbl-summary
@@ -932,9 +968,7 @@ TableSummary <- gtsummary::tbl_summary(
     SmokingStatus_Preop,
     PCSSF_TotalScore_Preop,
     MetatarsalInvolved,
-    NoSecondaryPath:Neuroma,
-    ComplicationOccur,
-    WiresRemoved
+    NoSecondaryPath:Neuroma
   ),
   by = "arm",
   label = list(
@@ -951,9 +985,7 @@ TableSummary <- gtsummary::tbl_summary(
   HalluxValgus ~ "dichotomous",
   MTPInstability ~ "dichotomous",
   Deformity ~ "dichotomous",
-  Neuroma ~ "dichotomous",
-  ComplicationOccur ~ "dichotomous",
-  WiresRemoved ~ "dichotomous"
+  Neuroma ~ "dichotomous"
 ),
 value = list(
   Sex2 = "Female",
@@ -962,11 +994,9 @@ value = list(
   HalluxValgus ~ "Yes",
   MTPInstability ~ "Yes",
   Deformity ~ "Yes",
-  Neuroma ~ "Yes",
-  ComplicationOccur ~ "Yes",
-  WiresRemoved ~ "Yes"
+  Neuroma ~ "Yes"
 )
-)
+) |> add_overall()
 
 
 knitr::knit_print(TableSummary)
@@ -974,7 +1004,11 @@ knitr::knit_print(TableSummary)
 
 ```
 
+The descriptives table @tbl-summary shows that nearly all cases presented with a low comorbidity burden on average, one or two metatarsals involved as well as secondary pathology.
+
 # Missingness
+
+The magnitude and pattern of missingness was assessed within the input dataset for the primary outcome analysis using the *naniar* package.
 
 ```{r}
 #| label: define-analysis-set
@@ -1032,9 +1066,15 @@ MasterAnalysis <- MasterTable |> dplyr::select(
 #| label: fig-missingness
 #| fig-cap: "Patterns of missingness across analysis variables"
 
-vis_miss(MasterAnalysis)
+FigMiss <- vis_miss(MasterAnalysis)
+
+knitr::knit_print(FigMiss)
 
 ```
+
+The missingness figure @fig-missingness identified a block pattern in smoking history and it was dropped from the analysis. The remaining variables showed missing-at-random patterns across the cohort.
+
+Multiple imputation with chained equations [@mice], implemented in the *mice* package was selected to address the missingness across the dataset in preparation for the primary analysis. The process was initialised by declaring the methods and sequence of imputation to be followed based on the known relationships between variables.
 
 ```{r}
 #| label: multiple-imputation
@@ -1086,6 +1126,8 @@ visitSeq <- c(
 
 ```
 
+Imputations were performed over 10 iterations for a total of 20 imputed datasets, prior to pooling for inclusion in the linear model of the primary analysis of FAOS Pain scores at 12months.
+
 ```{r}
 #| label: multiple-imputation-2
 
@@ -1104,6 +1146,8 @@ visitSeq <- c(
 ```
 
 # Primary Analysis
+
+A linear model was constructed from the pooled imputation data with FAOS Pain subscore as the outcome and Group adjusted by the baseline FAOS score, age, sex and the comorbidity score.
 
 ```{r}
 #| label: primary-analysis-1
@@ -1131,6 +1175,8 @@ knitr::knit_print(ModelSummary)
 
 ```
 
+The model summary @tbl-primary showed no significant difference between groups (P = 0.6) and a small effect (2 points on the FAOS scale) which is well below the MCID of the FAOS overall [@desai2019].
+
 Predictions were generated from the model and summarised.
 
 ```{r}
@@ -1157,6 +1203,8 @@ FAOSPlot <- ggplot(data = FAOSPredict, mapping = aes(y = Group, x = FAOS_Pain_To
 knitr::knit_print(FAOSPlot)
 ```
 
+Visualisation of the model predictions @fig-model-predicted show the small differences in the average scores between groups and the non-normal distributions of the responses.
+
 ```{r}
 #| label: tbl-modelpredicted
 #| tbl-cap: "Model predicted FAOS at 12 months compared between groups"
@@ -1178,9 +1226,11 @@ knitr::knit_print(TablePredict)
 
 ```
 
+The model-predicted summary statistics in FAOS Pain at 12months @tbl-modelpredicted showed no difference between groups.
+
 # Secondary Analysis - Complications
 
-Complications and Reoperations
+The incidence of complications and reoperations was compared between groups in a summary table with univariate comparisons performed on each outcome.
 
 ```{r}
 #| label: tbl-complications
@@ -1195,7 +1245,8 @@ TableComp <- gtsummary::tbl_summary(
     arm,
     ComplicationTreatment,
     OccurDelay,
-    Infection:Other
+    Infection:AnyComplication,
+    WiresRemoved
   ),
   by = "arm",
   label = list(
@@ -1206,14 +1257,18 @@ TableComp <- gtsummary::tbl_summary(
   DVT_Circulation ~ "dichotomous",
   Malalignment  ~ "dichotomous",
   Symptoms ~ "dichotomous",
-  Other ~ "dichotomous"
+  Other ~ "dichotomous",
+  AnyComplication ~ "dichotomous",
+  WiresRemoved ~ "dichotomous"
 ),
 value = list(
    Infection ~ TRUE,
   DVT_Circulation ~ TRUE,
   Malalignment  ~ TRUE,
   Symptoms ~ TRUE,
-  Other ~ TRUE
+  Other ~ TRUE,
+  AnyComplication ~ TRUE,
+  WiresRemoved ~ "Yes"
 ),
  missing = "no"
 ) |> add_overall() |> add_p()
@@ -1223,3 +1278,9 @@ knitr::knit_print(TableComp)
 
 
 ```
+
+No significant differences were observed @tbl-complications for any outcome associated with complications or reoperations.
+
+# Interpretation
+
+The osteotomy technique utilised has no discernible effect on pain scores returned at 12months followup, or complication incidence at up to 12months followup. Choice of technique can be made by the operating surgeon based on factors other than patient outcomes.
