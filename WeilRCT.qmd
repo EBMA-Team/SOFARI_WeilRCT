@@ -58,6 +58,7 @@ The relevant packages required for the analysis were loaded in advance.
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
+  "grateful",
   "marginaleffects",
   "wordcloud",
   "ggdag",

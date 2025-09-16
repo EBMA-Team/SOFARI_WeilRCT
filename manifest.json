@@ -1317,6 +1317,36 @@
         "Built": "R 4.4.3; ; 2025-09-12 04:10:55 UTC; windows"
       }
     },
+    "desc": {
+      "Source": "CRAN",
+      "Repository": "https://cran.csiro.au",
+      "description": {
+        "Package": "desc",
+        "Title": "Manipulate DESCRIPTION Files",
+        "Version": "1.4.3",
+        "Authors@R": "c(\n    person(\"Gábor\", \"Csárdi\", , \"csardi.gabor@gmail.com\", role = c(\"aut\", \"cre\")),\n    person(\"Kirill\", \"Müller\", role = \"aut\"),\n    person(\"Jim\", \"Hester\", , \"james.f.hester@gmail.com\", role = \"aut\"),\n    person(\"Maëlle\", \"Salmon\", role = \"ctb\",\n           comment = c(ORCID = \"0000-0002-2815-0399\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
+        "Description": "Tools to read, write, create, and manipulate DESCRIPTION\n    files.  It is intended for packages that create or manipulate other\n    packages.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://desc.r-lib.org/, https://github.com/r-lib/desc",
+        "BugReports": "https://github.com/r-lib/desc/issues",
+        "Depends": "R (>= 3.4)",
+        "Imports": "cli, R6, utils",
+        "Suggests": "callr, covr, gh, spelling, testthat, whoami, withr",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Encoding": "UTF-8",
+        "Language": "en-US",
+        "RoxygenNote": "7.2.3",
+        "Collate": "'assertions.R' 'authors-at-r.R' 'built.R' 'classes.R'\n'collate.R' 'constants.R' 'deps.R' 'desc-package.R'\n'description.R' 'encoding.R' 'find-package-root.R' 'latex.R'\n'non-oo-api.R' 'package-archives.R' 'read.R' 'remotes.R'\n'str.R' 'syntax_checks.R' 'urls.R' 'utils.R' 'validate.R'\n'version.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2023-12-10 11:07:50 UTC; gaborcsardi",
+        "Author": "Gábor Csárdi [aut, cre],\n  Kirill Müller [aut],\n  Jim Hester [aut],\n  Maëlle Salmon [ctb] (<https://orcid.org/0000-0002-2815-0399>),\n  Posit Software, PBC [cph, fnd]",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-12-10 11:40:08 UTC",
+        "Built": "R 4.4.2; ; 2025-02-16 01:55:04 UTC; windows"
+      }
+    },
     "digest": {
       "Source": "CRAN",
       "Repository": "https://cran.csiro.au",
@@ -1816,34 +1846,6 @@
         "Archs": "x64"
       }
     },
-    "ggfortify": {
-      "Source": "CRAN",
-      "Repository": "https://cran.csiro.au",
-      "description": {
-        "Package": "ggfortify",
-        "Type": "Package",
-        "Title": "Data Visualization Tools for Statistical Analysis Results",
-        "Version": "0.4.19",
-        "Date": "2025-07-26",
-        "Authors@R": "c(\n  person(\"Masaaki\", \"Horikoshi\", role = c(\"aut\"),\n         email = \"sinhrks@gmail.com\"),\n  person(\"Yuan\", \"Tang\", role = c(\"aut\", \"cre\"),\n         email = \"terrytangyuan@gmail.com\",\n         comment = c(ORCID = \"0000-0001-5243-233X\")),\n  person(\"Austin\", \"Dickey\", role = c(\"ctb\")),\n  person(\"Matthias\", \"Grenié\", role = c(\"ctb\")),\n  person(\"Ryan\", \"Thompson\", role = c(\"ctb\")),\n  person(\"Luciano\", \"Selzer\", role = c(\"ctb\")),\n  person(\"Dario\", \"Strbenac\", role = c(\"ctb\")),\n  person(\"Kirill\", \"Voronin\", role = c(\"ctb\")),\n  person(\"Damir\", \"Pulatov\", role = c(\"ctb\"))\n  )",
-        "Maintainer": "Yuan Tang <terrytangyuan@gmail.com>",
-        "URL": "https://github.com/sinhrks/ggfortify",
-        "BugReports": "https://github.com/sinhrks/ggfortify/issues",
-        "Encoding": "UTF-8",
-        "Description": "Unified plotting tools for statistics commonly used, such as GLM,\n    time series, PCA families, clustering and survival analysis. The package offers\n    a single plotting interface for these analysis results and plots in a unified\n    style using 'ggplot2'.",
-        "License": "MIT + file LICENSE",
-        "Depends": "methods, ggplot2 (>= 2.0.0)",
-        "Imports": "dplyr (>= 0.3), tidyr, gridExtra, grid, scales, stringr,\ntibble",
-        "Suggests": "testthat, cluster, changepoint, fGarch, forecast, ggrepel,\nglmnet, grDevices, KFAS, knitr, lintr, mapdata, markdown, MASS,\nMSwM, nlme, raster, ROCR, sp, stats, strucchange, survival,\ntimeSeries, tseries, utils, vars, xts, zoo, lfda",
-        "RoxygenNote": "7.3.2",
-        "NeedsCompilation": "no",
-        "Packaged": "2025-07-27 01:13:24 UTC; terrytangyuan",
-        "Author": "Masaaki Horikoshi [aut],\n  Yuan Tang [aut, cre] (ORCID: <https://orcid.org/0000-0001-5243-233X>),\n  Austin Dickey [ctb],\n  Matthias Grenié [ctb],\n  Ryan Thompson [ctb],\n  Luciano Selzer [ctb],\n  Dario Strbenac [ctb],\n  Kirill Voronin [ctb],\n  Damir Pulatov [ctb]",
-        "Repository": "CRAN",
-        "Date/Publication": "2025-07-27 05:20:02 UTC",
-        "Built": "R 4.4.3; ; 2025-08-04 02:48:34 UTC; windows"
-      }
-    },
     "ggplot2": {
       "Source": "CRAN",
       "Repository": "https://cran.csiro.au",
@@ -1935,37 +1937,6 @@
         "Date/Publication": "2024-09-07 21:50:02 UTC",
         "Built": "R 4.4.2; x86_64-w64-mingw32; 2025-02-16 03:48:01 UTC; windows",
         "Archs": "x64"
-      }
-    },
-    "ggsurvfit": {
-      "Source": "CRAN",
-      "Repository": "https://cran.csiro.au",
-      "description": {
-        "Package": "ggsurvfit",
-        "Title": "Flexible Time-to-Event Figures",
-        "Version": "1.2.0",
-        "Authors@R": "c(\n    person(\"Daniel D.\", \"Sjoberg\", , \"danield.sjoberg@gmail.com\", role = c(\"aut\", \"cre\", \"cph\"),\n           comment = c(ORCID = \"0000-0003-0862-2018\")),\n    person(\"Mark\", \"Baillie\", , \"bailliem@gmail.com\", role = \"aut\"),\n    person(\"Charlotta\", \"Fruechtenicht\", , \"charlotta.fruechtenicht@roche.com\", role = \"aut\",\n           comment = c(ORCID = \"0000-0002-6689-6423\")),\n    person(\"Steven\", \"Haesendonckx\", , \"shaesen2@its.jnj.com\", role = \"aut\",\n           comment = c(ORCID = \"0000-0001-8222-3686\")),\n    person(\"Tim\", \"Treis\", , \"tim.treis@outlook.de\", role = \"aut\",\n           comment = c(ORCID = \"0000-0002-9686-4799\"))\n  )",
-        "Description": "Ease the creation of time-to-event (i.e. survival) endpoint\n    figures. The modular functions create figures ready for publication.\n    Each of the functions that add to or modify the figure are written as\n    proper 'ggplot2' geoms or stat methods, allowing the functions from\n    this package to be combined with any function or customization from\n    'ggplot2' and other 'ggplot2' extension packages.",
-        "License": "MIT + file LICENSE",
-        "URL": "https://github.com/pharmaverse/ggsurvfit,\nhttps://www.danieldsjoberg.com/ggsurvfit/",
-        "BugReports": "https://github.com/pharmaverse/ggsurvfit/issues",
-        "Depends": "R (>= 4.1.0)",
-        "Imports": "broom (>= 1.0.0), cli (>= 3.0.0), dplyr (>= 1.0.3), ggplot2\n(>= 4.0.0), glue (>= 1.6.0), gtable, patchwork (>= 1.1.0),\nrlang (>= 1.0.0), survival (>= 3.6-4), tidyr (>= 1.0.0)",
-        "Suggests": "covr, knitr, rmarkdown, scales (>= 1.1.0), spelling, testthat\n(>= 3.2.0), tidycmprsk (>= 1.0.0), vdiffr (>= 1.0.0), withr",
-        "VignetteBuilder": "knitr",
-        "Config/Needs/website": "cowplot, ggeasy, gghighlight",
-        "Config/testthat/edition": "3",
-        "Encoding": "UTF-8",
-        "Language": "en-US",
-        "LazyData": "true",
-        "RoxygenNote": "7.3.3",
-        "NeedsCompilation": "no",
-        "Packaged": "2025-09-13 00:52:24 UTC; sjobergd",
-        "Author": "Daniel D. Sjoberg [aut, cre, cph] (ORCID:\n    <https://orcid.org/0000-0003-0862-2018>),\n  Mark Baillie [aut],\n  Charlotta Fruechtenicht [aut] (ORCID:\n    <https://orcid.org/0000-0002-6689-6423>),\n  Steven Haesendonckx [aut] (ORCID:\n    <https://orcid.org/0000-0001-8222-3686>),\n  Tim Treis [aut] (ORCID: <https://orcid.org/0000-0002-9686-4799>)",
-        "Maintainer": "Daniel D. Sjoberg <danield.sjoberg@gmail.com>",
-        "Repository": "CRAN",
-        "Date/Publication": "2025-09-13 05:10:34 UTC",
-        "Built": "R 4.4.3; ; 2025-09-14 23:51:45 UTC; windows"
       }
     },
     "glmnet": {
@@ -2117,6 +2088,33 @@
         "Date/Publication": "2025-01-23 16:20:06 UTC",
         "Built": "R 4.4.2; x86_64-w64-mingw32; 2025-02-18 02:46:56 UTC; windows",
         "Archs": "x64"
+      }
+    },
+    "grateful": {
+      "Source": "CRAN",
+      "Repository": "https://cran.csiro.au",
+      "description": {
+        "Package": "grateful",
+        "Title": "Facilitate Citation of R Packages",
+        "Version": "0.3.0",
+        "Authors@R": "c(\n    person(\"Francisco\", \"Rodriguez-Sanchez\", \n            email = \"f.rodriguez.sanc@gmail.com\", \n            role = c(\"aut\", \"cre\", \"cph\"),\n            comment = c(ORCID = \"0000-0002-7981-1599\")),\n    person(\"Connor P.\", \"Jackson\", email = \"connor@cpjackson.net\", role = \"aut\",\n           comment = c(ORCID = \"0000-0002-4220-5210\")),\n    person(\"Shaurita D.\", \"Hutchins\", role = \"ctb\"),\n    person(\"James M.\", \"Clawson\", role = \"ctb\")\n  )",
+        "Description": "Facilitates the citation of R packages used in analysis\n    projects. Scans project for packages used, gets their citations, and\n    produces a document with citations in the preferred bibliography\n    format, ready to be pasted into reports or manuscripts. Alternatively,\n    'grateful' can be used directly within an 'R Markdown' or 'Quarto' document.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://pakillo.github.io/grateful/",
+        "BugReports": "https://github.com/Pakillo/grateful/issues",
+        "Depends": "R (>= 3.0.0)",
+        "Imports": "desc, knitr, remotes, renv, rmarkdown, rstudioapi, utils",
+        "Suggests": "curl, testthat (>= 3.0.0)",
+        "Config/testthat/edition": "3",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-09-04 14:28:18 UTC; frs",
+        "Author": "Francisco Rodriguez-Sanchez [aut, cre, cph] (ORCID:\n    <https://orcid.org/0000-0002-7981-1599>),\n  Connor P. Jackson [aut] (ORCID:\n    <https://orcid.org/0000-0002-4220-5210>),\n  Shaurita D. Hutchins [ctb],\n  James M. Clawson [ctb]",
+        "Maintainer": "Francisco Rodriguez-Sanchez <f.rodriguez.sanc@gmail.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-09-04 15:00:02 UTC",
+        "Built": "R 4.4.3; ; 2025-09-12 03:26:21 UTC; windows"
       }
     },
     "gridExtra": {
@@ -3434,39 +3432,6 @@
         "Archs": "x64"
       }
     },
-    "openxlsx2": {
-      "Source": "CRAN",
-      "Repository": "https://cran.csiro.au",
-      "description": {
-        "Type": "Package",
-        "Package": "openxlsx2",
-        "Title": "Read, Write and Edit 'xlsx' Files",
-        "Version": "1.19",
-        "Language": "en-US",
-        "Authors@R": "c(\n  person(\"Jordan Mark\", \"Barbone\", email = \"jmbarbone@gmail.com\", role = \"aut\", comment = c(ORCID = \"0000-0001-9788-3628\")),\n  person(\"Jan Marvin\", \"Garbuszus\", email = \"jan.garbuszus@ruhr-uni-bochum.de\", role = c(\"aut\", \"cre\")),\n  person(\"Olivier\", \"Roy\", role = \"ctb\"),\n  person(family = \"openxlsx authors\", role = \"cph\", comment = \"openxlsx package\"),\n  person(\"Arseny\", \"Kapoulkine\", role = c(\"ctb\", \"cph\"), comment = \"Author of included pugixml code\")\n  )",
-        "Description": "Simplifies the creation of 'xlsx' files by\n    providing a high level interface to writing, styling and editing\n    worksheets.",
-        "License": "MIT + file LICENSE",
-        "URL": "https://janmarvin.github.io/openxlsx2/,\nhttps://github.com/JanMarvin/openxlsx2",
-        "BugReports": "https://github.com/JanMarvin/openxlsx2/issues",
-        "Depends": "R (>= 3.5.0)",
-        "Imports": "R6, Rcpp, grDevices, stringi, utils, zip",
-        "LinkingTo": "Rcpp",
-        "Suggests": "ggplot2, knitr, mschart (>= 0.4), rmarkdown, rvg, testthat\n(>= 3.0.0), waldo",
-        "VignetteBuilder": "knitr",
-        "Encoding": "UTF-8",
-        "RoxygenNote": "7.3.2",
-        "Config/testthat/edition": "3",
-        "Config/testthat/parallel": "true",
-        "NeedsCompilation": "yes",
-        "Packaged": "2025-08-24 09:30:29 UTC; janmarvingarbuszus",
-        "Author": "Jordan Mark Barbone [aut] (ORCID:\n    <https://orcid.org/0000-0001-9788-3628>),\n  Jan Marvin Garbuszus [aut, cre],\n  Olivier Roy [ctb],\n  openxlsx authors [cph] (openxlsx package),\n  Arseny Kapoulkine [ctb, cph] (Author of included pugixml code)",
-        "Maintainer": "Jan Marvin Garbuszus <jan.garbuszus@ruhr-uni-bochum.de>",
-        "Repository": "CRAN",
-        "Date/Publication": "2025-08-25 06:30:02 UTC",
-        "Built": "R 4.4.3; x86_64-w64-mingw32; 2025-09-12 01:18:38 UTC; windows",
-        "Archs": "x64"
-      }
-    },
     "ordinal": {
       "Source": "CRAN",
       "Repository": "https://cran.csiro.au",
@@ -4197,6 +4162,37 @@
         "Built": "R 4.4.2; ; 2024-11-24 01:28:03 UTC; windows"
       }
     },
+    "renv": {
+      "Source": "CRAN",
+      "Repository": "https://cran.csiro.au",
+      "description": {
+        "Package": "renv",
+        "Type": "Package",
+        "Title": "Project Environments",
+        "Version": "1.1.5",
+        "Authors@R": "c(\n    person(\"Kevin\", \"Ushey\", role = c(\"aut\", \"cre\"), email = \"kevin@rstudio.com\",\n           comment = c(ORCID = \"0000-0003-2880-7407\")),\n    person(\"Hadley\", \"Wickham\", role = c(\"aut\"), email = \"hadley@rstudio.com\",\n           comment = c(ORCID = \"0000-0003-4757-117X\")),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"))\n    )",
+        "Description": "A dependency management toolkit for R. Using 'renv', you can create\n    and manage project-local R libraries, save the state of these libraries to\n    a 'lockfile', and later restore your library as required. Together, these\n    tools can help make your projects more isolated, portable, and reproducible.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://rstudio.github.io/renv/, https://github.com/rstudio/renv",
+        "BugReports": "https://github.com/rstudio/renv/issues",
+        "Imports": "utils",
+        "Suggests": "BiocManager, cli, compiler, covr, cpp11, devtools, generics,\ngitcreds, jsonlite, jsonvalidate, knitr, miniUI, modules,\npackrat, pak, R6, remotes, reticulate, rmarkdown, rstudioapi,\nshiny, testthat, uuid, waldo, yaml, webfakes",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.3.2",
+        "VignetteBuilder": "knitr",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Config/testthat/parallel": "true",
+        "Config/testthat/start-first": "bioconductor,python,install,restore,snapshot,retrieve,remotes",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-07-24 20:47:34 UTC; kevin",
+        "Author": "Kevin Ushey [aut, cre] (ORCID: <https://orcid.org/0000-0003-2880-7407>),\n  Hadley Wickham [aut] (ORCID: <https://orcid.org/0000-0003-4757-117X>),\n  Posit Software, PBC [cph, fnd]",
+        "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2025-07-24 21:40:02 UTC",
+        "Built": "R 4.4.3; ; 2025-08-04 00:24:57 UTC; windows"
+      }
+    },
     "reprex": {
       "Source": "CRAN",
       "Repository": "https://cran.csiro.au",
@@ -4757,31 +4753,6 @@
         "Date/Publication": "2025-06-08 12:10:02 UTC",
         "Built": "R 4.4.3; x86_64-w64-mingw32; 2025-06-08 23:51:15 UTC; windows",
         "Archs": "x64"
-      }
-    },
-    "tictoc": {
-      "Source": "CRAN",
-      "Repository": "https://cran.csiro.au",
-      "description": {
-        "Package": "tictoc",
-        "Title": "Functions for Timing R Scripts, as Well as Implementations of\n\"Stack\" and \"StackList\" Structures",
-        "Version": "1.2.1",
-        "Author": "Sergei Izrailev",
-        "Maintainer": "Sergei Izrailev <sizrailev@jabiruventures.com>",
-        "Description": "Code execution timing functions 'tic' and 'toc' that\n    can be nested. One can record all timings while a complex script is\n    running, and examine the values later. It is also possible to instrument\n    the timing calls with custom callbacks. In addition, this package provides\n    class 'Stack', implemented as a vector, and class 'StackList', which is a\n    stack implemented as a\n    list, both of which support operations 'push', 'pop', 'first_element',\n    'last_element' and 'clear'.",
-        "URL": "https://github.com/jabiru/tictoc",
-        "Depends": "R (>= 2.15), methods",
-        "License": "Apache License (== 2.0) | file LICENSE",
-        "Copyright": "Copyright (C) Collective, Inc. | file inst/COPYRIGHTS",
-        "Encoding": "UTF-8",
-        "RoxygenNote": "7.2.3",
-        "Suggests": "testthat (>= 3.0.0)",
-        "Config/testthat/edition": "3",
-        "NeedsCompilation": "no",
-        "Packaged": "2024-03-18 01:27:55 UTC; sergei",
-        "Repository": "CRAN",
-        "Date/Publication": "2024-03-18 05:10:02 UTC",
-        "Built": "R 4.4.2; ; 2024-11-24 01:27:18 UTC; windows"
       }
     },
     "tidygraph": {
@@ -5472,34 +5443,6 @@
         "Built": "R 4.4.1; x86_64-w64-mingw32; 2024-10-05 00:28:46 UTC; windows",
         "Archs": "x64"
       }
-    },
-    "zip": {
-      "Source": "CRAN",
-      "Repository": "https://cran.csiro.au",
-      "description": {
-        "Package": "zip",
-        "Title": "Cross-Platform 'zip' Compression",
-        "Version": "2.3.3",
-        "Authors@R": "c(\n    person(\"Gábor\", \"Csárdi\", , \"csardi.gabor@gmail.com\", role = c(\"aut\", \"cre\")),\n    person(\"Kuba\", \"Podgórski\", role = \"ctb\"),\n    person(\"Rich\", \"Geldreich\", role = \"ctb\"),\n    person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\"),\n           comment = c(ROR = \"03wc8by49\"))\n  )",
-        "Description": "Cross-Platform 'zip' Compression Library. A replacement for\n    the 'zip' function, that does not require any additional external\n    tools on any platform.",
-        "License": "MIT + file LICENSE",
-        "URL": "https://github.com/r-lib/zip, https://r-lib.github.io/zip/",
-        "BugReports": "https://github.com/r-lib/zip/issues",
-        "Suggests": "covr, pillar, processx, R6, testthat, withr",
-        "Config/Needs/website": "tidyverse/tidytemplate",
-        "Config/testthat/edition": "3",
-        "Config/usethis/last-upkeep": "2025-05-07",
-        "Encoding": "UTF-8",
-        "RoxygenNote": "7.3.2.9000",
-        "NeedsCompilation": "yes",
-        "Packaged": "2025-05-13 13:31:44 UTC; gaborcsardi",
-        "Author": "Gábor Csárdi [aut, cre],\n  Kuba Podgórski [ctb],\n  Rich Geldreich [ctb],\n  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
-        "Maintainer": "Gábor Csárdi <csardi.gabor@gmail.com>",
-        "Repository": "CRAN",
-        "Date/Publication": "2025-05-13 14:10:02 UTC",
-        "Built": "R 4.4.3; x86_64-w64-mingw32; 2025-05-28 00:40:18 UTC; windows",
-        "Archs": "x64"
-      }
     }
   },
   "files": {
@@ -5519,10 +5462,10 @@
       "checksum": "ced71a82d2bfcac33e14d8d401997d8b"
     },
     "WeilRCT.bib": {
-      "checksum": "20573ea32590731013f8cd8365c1a053"
+      "checksum": "d6ec3701fb1b125c72b5099c87543c19"
     },
     "WeilRCT.qmd": {
-      "checksum": "0f315c14e23b8210fba210128ea37d94"
+      "checksum": "f36eb06351a1a53b829f0640c840a74e"
     }
   },
   "users": null
