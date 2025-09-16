@@ -100,6 +100,7 @@ knitr::kable(pkgs)
 Pre-authorise access to registry datasets using the *gargle* package.
 
 ```{r}
+#| label: authorisation-1
 #| echo: false
 
 # Set the cache location
@@ -111,6 +112,7 @@ drive_auth(email = "cscholes@ebma.com.au",
 ```
 
 ```{r}
+#| label: authorisation-2
 #| echo: false
 
 options(
@@ -181,6 +183,27 @@ bind_and_clean <- function(df1, df2, cols = NULL, clean_cols = NULL, clean_fn = 
 }
 
 ```
+
+
+```{r}
+#| label: replace-term-func
+
+
+ReplaceTermFun <- function(String) {
+  # Find the matched term in TargetTerms3
+  match <- filter(TargetTerms2,
+                  String == Term2)
+  
+  # Check if a match is found
+  if (nrow(match) == 1) {
+    return(match$ReplaceTerm)
+  } else {
+    # Return the original string if no match is found
+    return(String)
+  }
+}
+```
+
 
 # Title and Abstract
 
@@ -337,6 +360,9 @@ PROMSInput <- range_read(
 The self-assessed comorbidity score had to be added to the dataset by calculating from individual responses included in the registry snapshot. The scores were then added to the analysis master table.
 
 ```{r}
+#| label: srcq-score
+
+
 # Apply to your data
 MasterSRCQ <- PROMSInput |> 
   dplyr::select(
@@ -369,6 +395,8 @@ Scoring DASS-21
 
 
 ```{r}
+#| label: dass21-score
+
 
 MasterDASS <- PROMSInput |> dplyr::select(
   TreatmentID,
@@ -399,7 +427,7 @@ Extract pain management responses
 
 
 ```{r}
-
+#| label: pain-management
 # Are you using any medications to cope with the pain in your feet? [Yes|No]
 # Do you use any other methods to cope with the pain, not including medications? [Yes|No]
 # 
@@ -417,7 +445,7 @@ MasterPMS <- PROMSInput |> dplyr::select(
 
 
 ```{r}
-
+#| label: adverse-events-1
 
 # Identify non-k-wire occurrences
 
@@ -458,7 +486,7 @@ MasterComplic1b <- summarise(
 
 
 ```{r}
-
+#| label: adverse-events-2
 
 MasterComplic2 <- Complications |> dplyr::filter(
   stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan(?!.*tar)")
@@ -492,6 +520,8 @@ MasterComplic2b <- summarise(
 The free-text describing the nature of the complication or adverse event was pre-processed using *tidytext* (v`{r} utils::packageVersion(pkg = "tidytext")`)[@tidytext] to split into word tokens and remove stop words.
 
 ```{r}
+#| label: adverse-events-1
+
 Stop <- tibble(get_stopwords())
 
 ComplicTable1 <- tidytext::unnest_tokens(
@@ -514,6 +544,7 @@ ComplicTable1 <- tidytext::unnest_tokens(
 Terms with less than four characters were extracted and reproduced in an external file for manual spelling of abbreviations. Terms with digits (e.g. L5) were removed.
 
 ```{r}
+#| label: adverse-events-3
 # Retrieve terms less than 4 characters that likely need to be recast into full words
 
 TargetTerms <- ComplicTable1 |> dplyr::select(
@@ -533,6 +564,7 @@ TargetTerms <- ComplicTable1 |> dplyr::select(
 ```
 
 ```{r}
+#| label: adverse-events-4
 #| eval: false
 
 # Authenticate for sheets using the same token
@@ -555,6 +587,7 @@ col_names = TRUE
 The abbreviated terms with expanded definitions were read back into the workspace for replacement in the complication descriptions.
 
 ```{r}
+#| label: adverse-events-5
 # read in new terms
 # 
 # Authenticate for sheets using the same token
@@ -574,27 +607,11 @@ TargetTerms2 <- googlesheets4::range_read(
 The terms were replaced using *stringr* functions and added to the dataframe containing complication data.
 
 ```{r}
+#| label: adverse-events-6
+
 
 TargetTermsList <- str_c(TargetTerms2$TargetTerm, collapse = "|")
 
-ReplaceTermFun <- function(String) {
-  # Find the matched term in TargetTerms3
-  match <- filter(TargetTerms2,
-                  String == Term2)
-  
-  # Check if a match is found
-  if (nrow(match) == 1) {
-    return(match$ReplaceTerm)
-  } else {
-    # Return the original string if no match is found
-    return(String)
-  }
-}
-
-
-```
-
-```{r}
 
 ComplicTable2 <- ComplicTable1 |> dplyr::mutate(
     Term3 = if_else(
@@ -646,6 +663,8 @@ knitr::knit_print(Figure2)
 
 
 ```{r}
+#| label: adverse-events-7
+
 
 MasterComplic1c <- left_join(
   MasterComplic1,
@@ -664,7 +683,7 @@ MasterComplic1c <- left_join(
 
 
 ```{r}
-
+#| label: adverse-events-8
 # Finalise compliations master
 # 
 # 
@@ -686,7 +705,7 @@ MasterComplic3 <- MasterComplic1c |> dplyr::mutate(
 ## Finalise Master Table
 
 ```{r}
-
+#| label: master-table
 
 MasterTable <- CONSORTFlow |> dplyr::filter(
   !is.na(mITT)
@@ -790,7 +809,6 @@ MasterTable <- CONSORTFlow |> dplyr::filter(
 
 
 ```{r}
-
 #| label: consort-prep
 
 
@@ -894,7 +912,7 @@ knitr::knit_print(ConsortChart)
 #Build MasterTable
 
 ```{r}
-
+#| label: surgical-data
 # Surgical Data
 # 
 # 
@@ -1064,6 +1082,8 @@ vis_miss(MasterAnalysis)
 ```
 
 ```{r}
+#| label: multiple-imputation
+
 
 predM <- mice::make.predictorMatrix(MasterAnalysis |> dplyr::select(-MetatarsalInvolved))
 
@@ -1112,6 +1132,8 @@ visitSeq <- c(
 ```
 
 ```{r}
+#| label: multiple-imputation-2
+
 
  MasterImp <- mice::mice(
     MasterAnalysis,
@@ -1130,6 +1152,8 @@ visitSeq <- c(
 # Primary Analysis
 
 ```{r}
+#| label: primary-analysis-1
+
 
 StudyModel <- with(
   MasterImp,
@@ -1141,7 +1165,7 @@ StudyModel <- with(
 
 
 ```{r}
-
+#| label: primary-analysis-2
 
 ModelSummary <- gtsummary::tbl_regression(
   StudyModel,
@@ -1164,6 +1188,8 @@ Complications and Reoperations
 ```{r}
 #| label: tbl-complications
 #| tbl-cap: "Complications observed in study cohort"
+#| message: false
+
 
 
 TableComp <- gtsummary::tbl_summary(
