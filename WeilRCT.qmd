@@ -742,112 +742,7 @@ MasterComplic3 <- MasterComplic1c |> dplyr::mutate(
 
 
 
-## Finalise Master Table
 
-
-
-
-
-
-```{r}
-#| label: master-table
-
-MasterTable <- CONSORTFlow |> dplyr::filter(
-  !is.na(mITT)
-) |> dplyr::select(
-  -(c(
-    exclusion1:mITT,
-    lost_followup
-  ))
-) |> rename(
-  TreatmentID = "trialno"
-) |> left_join(
-  MasterDASS |> dplyr::select(
-    TreatmentID,
-    DASS_Depression:DASS_Stress
-  ) |> mutate(
-    TreatmentID = as.character(TreatmentID)
-  ),
-  by = "TreatmentID"
-) |> left_join(
-  MasterSRCQ |> dplyr::select(
-    TreatmentID,
-    SRCQTotalScore
-  ) |> mutate(
-    TreatmentID = as.character(TreatmentID)),
-  by = "TreatmentID"
-) |> left_join(
-  PROMSInput |> dplyr::select(
-    TreatmentID,
-    contains("VR12") & contains("Physical|Mental"),
-    contains("DASS") & contains("PMS"),
-    SmokingStatus_Preop,
-    PCSSF_TotalScore_Preop,
-    FAOS_Pain_TotalScore_Preop,
-    FAOS_Pain_TotalScore_3months,
-    FAOS_Pain_TotalScore_6months,
-    FAOS_Pain_TotalScore_12months,
-  ) |> mutate(
-    TreatmentID = as.character(TreatmentID)),
-  by = "TreatmentID"
-) |> left_join(
-  SurgicalData2 |> dplyr::select(
-    TreatmentID:AdjunctProcComb,
-    -DateTreatment,
-    -ProcedureName,
-    -Facility
-  ),
-  by = "TreatmentID"
-) |> left_join(
-  MasterComplic1b |> rename(
-    ComplicationN = "Count"
-  ),
-  by = "TreatmentID"
-) |> left_join(
-  MasterComplic2b |> rename(
-    WireRemoval = "Count"
-  ),
-  by = "TreatmentID"
-) |> mutate(
-  ComplicationOccur = if_else(
-    is.na(ComplicationN),
-    "No",
-    "Yes"
-  ),
-  WiresRemoved = if_else(
-    is.na(WireRemoval),
-    "No",
-    "Yes"
-  )
-) |> mutate(
-  PatientID = stringr::str_split_i(TreatmentID,"\\.",1),
-  NoSecondaryPath = if_else(SecondaryPathComb == "None","None","No"),
-  HalluxRigidus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"rigidus"),"Yes","No"),
-  HalluxValgus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"valgus"),"Yes","No"),
-  MTPInstability = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"mtp.*instability"),"Yes","No"),
-  Deformity = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"(dip|pip).*deformity"),"Yes","No"),
-  Neuroma = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"neuroma"),"Yes","No"),
-  Sex2 = if_else(
-    Sex == "M",
-    "Male",
-    "Female"
-  )
-  ) |> dplyr::left_join(
-    MasterComplic3 |> dplyr::select(
-      TreatmentID,
-      OccurDelay,
-      ComplicationTreatment,
-      Infection:Other
-    ) |> group_by(TreatmentID) |> slice_min(
-      OccurDelay
-    ) |> ungroup(),
-    by = "TreatmentID"
-  ) |> dplyr::mutate(
-    across(c(Infection:Other), ~ replace_na(.x, FALSE))
-  )
-
-
-```
 
 
 # Participant flow
@@ -955,7 +850,112 @@ knitr::knit_print(ConsortChart)
 
 
 
+## Finalise Master Table
 
+
+
+
+
+
+```{r}
+#| label: master-table
+
+MasterTable <- CONSORTFlow |> dplyr::filter(
+  !is.na(mITT)
+) |> dplyr::select(
+  -(c(
+    exclusion1:mITT,
+    lost_followup
+  ))
+) |> rename(
+  TreatmentID = "trialno"
+) |> left_join(
+  MasterDASS |> dplyr::select(
+    TreatmentID,
+    DASS_Depression:DASS_Stress
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterSRCQ |> dplyr::select(
+    TreatmentID,
+    SRCQTotalScore
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)),
+  by = "TreatmentID"
+) |> left_join(
+  PROMSInput |> dplyr::select(
+    TreatmentID,
+    contains("VR12") & contains("Physical|Mental"),
+    contains("DASS") & contains("PMS"),
+    SmokingStatus_Preop,
+    PCSSF_TotalScore_Preop,
+    FAOS_Pain_TotalScore_Preop,
+    FAOS_Pain_TotalScore_3months,
+    FAOS_Pain_TotalScore_6months,
+    FAOS_Pain_TotalScore_12months,
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)),
+  by = "TreatmentID"
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID:AdjunctProcComb,
+    -DateTreatment,
+    -ProcedureName,
+    -Facility
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterComplic1b |> rename(
+    ComplicationN = "Count"
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterComplic2b |> rename(
+    WireRemoval = "Count"
+  ),
+  by = "TreatmentID"
+) |> mutate(
+  ComplicationOccur = if_else(
+    is.na(ComplicationN),
+    "No",
+    "Yes"
+  ),
+  WiresRemoved = if_else(
+    is.na(WireRemoval),
+    "No",
+    "Yes"
+  )
+) |> mutate(
+  PatientID = stringr::str_split_i(TreatmentID,"\\.",1),
+  NoSecondaryPath = if_else(SecondaryPathComb == "None","None","No"),
+  HalluxRigidus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"rigidus"),"Yes","No"),
+  HalluxValgus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"valgus"),"Yes","No"),
+  MTPInstability = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"mtp.*instability"),"Yes","No"),
+  Deformity = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"(dip|pip).*deformity"),"Yes","No"),
+  Neuroma = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"neuroma"),"Yes","No"),
+  Sex2 = if_else(
+    Sex == "M",
+    "Male",
+    "Female"
+  )
+  ) |> dplyr::left_join(
+    MasterComplic3 |> dplyr::select(
+      TreatmentID,
+      OccurDelay,
+      ComplicationTreatment,
+      Infection:Other
+    ) |> group_by(TreatmentID) |> slice_min(
+      OccurDelay
+    ) |> ungroup(),
+    by = "TreatmentID"
+  ) |> dplyr::mutate(
+    across(c(Infection:Other), ~ replace_na(.x, FALSE))
+  )
+
+
+```
 
 
 
