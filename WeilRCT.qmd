@@ -443,6 +443,46 @@ MasterPMS <- PROMSInput |> dplyr::select(
 
 ## Prepare Adverse Events
 
+```{r}
+#| label: surgical-data
+# Surgical Data
+# 
+# 
+SurgicalData2 <- SurgicalData |> tidyr::unite(
+  "SecondaryPathComb",
+  SecondaryPath1:SecondaryPath8,
+  sep = "; ",
+  na.rm = TRUE,
+  remove = TRUE
+) |> tidyr::unite(
+  "AdjunctProcComb",
+  AdjunctProc1:AdjunctProc8,
+  sep = "; ",
+  na.rm = TRUE,
+  remove = TRUE
+) |> mutate(
+    TimeStampParse1 = stringr::str_remove(TimeStamp,"GMT"),
+    TimeStampParse2 = str_replace(
+      TimeStampParse1, 
+      "^\\w{3} (\\d{2}) (\\w{3}), (\\d{2}:\\d{2}:\\d{2})\\s+(\\d{4})$",
+      "\\1 \\2 \\4 \\3"
+    ),
+    # Then parse with lubridate
+    TimeStampParse3 = dmy_hms(TimeStampParse2),
+    TimeStampParse =  date(with_tz(TimeStampParse3, "Australia/Sydney")),
+    FormFillDelay = as.numeric(difftime(TimeStampParse,DateTreatment, units = "days")),
+  ) |> dplyr::select(
+    -(c(
+      TimeStamp,
+    TimeStampParse1,
+    TimeStampParse2, 
+    TimeStampParse3
+    ))
+    )  # Remove the intermediate column if not needed
+
+
+```
+
 
 ```{r}
 #| label: adverse-events-1
@@ -705,45 +745,7 @@ MasterComplic3 <- MasterComplic1c |> dplyr::mutate(
 ## Finalise Master Table
 
 
-```{r}
-#| label: surgical-data
-# Surgical Data
-# 
-# 
-SurgicalData2 <- SurgicalData |> tidyr::unite(
-  "SecondaryPathComb",
-  SecondaryPath1:SecondaryPath8,
-  sep = "; ",
-  na.rm = TRUE,
-  remove = TRUE
-) |> tidyr::unite(
-  "AdjunctProcComb",
-  AdjunctProc1:AdjunctProc8,
-  sep = "; ",
-  na.rm = TRUE,
-  remove = TRUE
-) |> mutate(
-    TimeStampParse1 = stringr::str_remove(TimeStamp,"GMT"),
-    TimeStampParse2 = str_replace(
-      TimeStampParse1, 
-      "^\\w{3} (\\d{2}) (\\w{3}), (\\d{2}:\\d{2}:\\d{2})\\s+(\\d{4})$",
-      "\\1 \\2 \\4 \\3"
-    ),
-    # Then parse with lubridate
-    TimeStampParse3 = dmy_hms(TimeStampParse2),
-    TimeStampParse =  date(with_tz(TimeStampParse3, "Australia/Sydney")),
-    FormFillDelay = as.numeric(difftime(TimeStampParse,DateTreatment, units = "days")),
-  ) |> dplyr::select(
-    -(c(
-      TimeStamp,
-    TimeStampParse1,
-    TimeStampParse2, 
-    TimeStampParse3
-    ))
-    )  # Remove the intermediate column if not needed
 
-
-```
 
 
 
