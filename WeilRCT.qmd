@@ -19,7 +19,7 @@ format:
     embed-resources: true
     toc: true
     number-sections: true
-    code-fold: true
+    code-fold: false
     
     
 bibliography: WeilRCT.bib
