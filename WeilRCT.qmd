@@ -41,6 +41,7 @@ Load up required packages in advance. Citations are applied to each library at f
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
+  "wordcloud",
   "ggdag",
   "knitr",
   "cardx",
@@ -210,7 +211,8 @@ Data was retrieved and formatted using *openxlsx* to retrieve static snapshot fi
 #| echo: false
 
 SheetIDs <- list(
-  Handover = "https://docs.google.com/spreadsheets/d/1mrG1Oxv3oQbalTlh6xr3kGMZcpOz5m76unqbe0eu_uc/edit"
+  Handover = "https://docs.google.com/spreadsheets/d/1mrG1Oxv3oQbalTlh6xr3kGMZcpOz5m76unqbe0eu_uc/edit",
+  ComplicTerms = "https://docs.google.com/spreadsheets/d/17RV0zLK8ZlJF1TvXflYLgriOPfmQv1zjtiu-5pTz-GE/edit"
 )
 
 ```
@@ -411,6 +413,378 @@ MasterPMS <- PROMSInput |> dplyr::select(
 
 ```
 
+## Prepare Adverse Events
+
+
+```{r}
+
+
+# Identify non-k-wire occurrences
+
+MasterComplic1 <- Complications |> dplyr::filter(
+  stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan", negate = TRUE)
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID,
+    DateTreatment
+  ),
+  by = "TreatmentID",
+  relationship = "many-to-many"
+) |> mutate(
+  OccurDelay = as.numeric(difftime(DateOccurrence,DateTreatment,units = "days")),
+  ReopDelay = as.numeric(difftime(DateReoperation,DateTreatment,units = "days")),
+  Term1 = clean_text(ComplicationNature)
+) |> filter(
+  !is.na(DateTreatment),
+ between(OccurDelay, 0, 308)
+) |> distinct(
+  ComplicationID,
+  .keep_all = TRUE
+)
+
+# Determine count of occurrences per treatment record
+
+MasterComplic1b <- summarise(
+  MasterComplic1,
+  .by = TreatmentID,
+  Count = n()
+)
+
+
+
+
+```
+
+
+
+```{r}
+
+
+MasterComplic2 <- Complications |> dplyr::filter(
+  stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan(?!.*tar)")
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID,
+    DateTreatment
+  ),
+  by = "TreatmentID",
+  relationship = "many-to-many"
+) |> mutate(
+  OccurDelay = as.numeric(difftime(DateOccurrence,DateTreatment,units = "days")),
+  ReopDelay = as.numeric(difftime(DateReoperation,DateTreatment,units = "days")),
+  Term1 = clean_text(ComplicationNature)
+) |> filter(
+  !is.na(DateTreatment),
+ between(OccurDelay, 0, 308)
+) |> distinct(
+  ComplicationID,
+  .keep_all = TRUE
+)
+
+MasterComplic2b <- summarise(
+  MasterComplic2,
+  .by = TreatmentID,
+  Count = n()
+)
+
+```
+
+The free-text describing the nature of the complication or adverse event was pre-processed using *tidytext* (v`{r} utils::packageVersion(pkg = "tidytext")`)[@tidytext] to split into word tokens and remove stop words.
+
+```{r}
+Stop <- tibble(get_stopwords())
+
+ComplicTable1 <- tidytext::unnest_tokens(
+  MasterComplic1,
+  output = Term2,
+  input = Term1,
+  token = "words",
+  format = "text",
+  to_lower = TRUE,
+  drop = FALSE
+) |> anti_join(
+  Stop,
+  by = c("Term2" = "word")
+) |> mutate(
+  TermLength = stringr::str_length(Term2)
+)
+
+```
+
+Terms with less than four characters were extracted and reproduced in an external file for manual spelling of abbreviations. Terms with digits (e.g. L5) were removed.
+
+```{r}
+# Retrieve terms less than 4 characters that likely need to be recast into full words
+
+TargetTerms <- ComplicTable1 |> dplyr::select(
+  ComplicationID,
+  Term2
+  ) |> distinct(
+  Term2,
+  .keep_all = TRUE
+  ) |> dplyr::mutate(
+    TermLength = stringr::str_length(Term2)
+    ) |> dplyr::filter(
+     TermLength < 4
+  ) |> arrange(
+    Term2
+  )
+
+```
+
+```{r}
+#| eval: false
+
+# Authenticate for sheets using the same token
+gs4_auth(token = drive_token())
+
+# Commented out after first use
+googlesheets4::range_write(
+ss = SheetIDs$ComplicTerm,
+data = TargetTerms |> dplyr::select(
+  ComplicationID,
+  Term2
+),
+sheet = "ComplicTerm",
+range = paste0("A1:","B",nrow(TargetTerms) + 1),
+col_names = TRUE
+
+)
+```
+
+The abbreviated terms with expanded definitions were read back into the workspace for replacement in the complication descriptions.
+
+```{r}
+# read in new terms
+# 
+# Authenticate for sheets using the same token
+gs4_auth(token = drive_token())
+
+TargetTerms2 <- googlesheets4::range_read(
+  ss = SheetIDs$ComplicTerm,
+  sheet = "ComplicTerm",
+  range = "A1:C",
+  col_names = TRUE,
+  trim_ws = TRUE
+) |> dplyr::mutate(
+  TargetTerm = paste0("\\b",Term2,"\\b")
+)
+```
+
+The terms were replaced using *stringr* functions and added to the dataframe containing complication data.
+
+```{r}
+
+TargetTermsList <- str_c(TargetTerms2$TargetTerm, collapse = "|")
+
+ReplaceTermFun <- function(String) {
+  # Find the matched term in TargetTerms3
+  match <- filter(TargetTerms2,
+                  String == Term2)
+  
+  # Check if a match is found
+  if (nrow(match) == 1) {
+    return(match$ReplaceTerm)
+  } else {
+    # Return the original string if no match is found
+    return(String)
+  }
+}
+
+
+```
+
+```{r}
+
+ComplicTable2 <- ComplicTable1 |> dplyr::mutate(
+    Term3 = if_else(
+      TermLength < 4,
+      stringr::str_replace_all(Term2, TargetTermsList, ReplaceTermFun),
+      Term2
+      )
+  ) 
+  
+
+```
+
+A figure displaying term frequency was generated using *ggplot2* and formatted for reporting using *knitr*.
+
+```{r}
+#| label: fig-termfreq
+#| fig-cap: "Frequency of terms in complications descriptions"
+
+
+Figure1 <- ComplicTable2 |> dplyr::filter(
+  stringr::str_detect(Term3,"left|right|treatment", negate = TRUE)
+  ) |>
+  count(Term3, sort = TRUE) |>
+  filter(n > 5) |>
+  mutate(Term3 = reorder(Term3, n)) |>
+  ggplot(aes(n, Term3)) +
+  geom_col() +
+  labs(y = NULL)
+
+
+knitr::knit_print(Figure1)
+```
+
+A wordcloud was generated using *wordcloud* to express the most common terms in the complication description free text field.
+
+```{r}
+#| label: fig-wordcloud
+#| fig-cap: "Word cloud by frequency of terms in complications descriptions"
+#| message: false
+
+
+Figure2 <- ComplicTable2 |> filter(!Term3 == "treatment") |>
+  count(Term3) |>
+  with(wordcloud::wordcloud(Term3, n, max.words = 50))
+
+knitr::knit_print(Figure2)
+```
+
+
+
+```{r}
+
+MasterComplic1c <- left_join(
+  MasterComplic1,
+  ComplicTable2 |> summarise(
+    Term4 = str_c(Term3, collapse = " "),
+    .by = ComplicationID
+  ),
+  by = "ComplicationID"
+) |> dplyr::filter(# drop duplicate entries
+  !ComplicationID == "9544.1.2",
+  !ComplicationID == "4061.1.3" # not a complication
+  
+)
+
+```
+
+
+```{r}
+
+# Finalise compliations master
+# 
+# 
+
+MasterComplic3 <- MasterComplic1c |> dplyr::mutate(
+  Infection = if_else(stringr::str_detect(Term4, "keflex|infect|collection|abscess|eschar"),TRUE,FALSE),
+  Malalignment = if_else(stringr::str_detect(Term4, "extension|sit|sat|flexion|contracture|varus|valgus|taping"),TRUE,FALSE),
+  DVT_Circulation = if_else(stringr::str_detect(Term4, "thromb|stenosis"),TRUE,FALSE),
+  Symptoms = if_else(stringr::str_detect(Term4, "ongoing|discomfort|swelling|pain"),TRUE,FALSE),
+  Other = if_else(!Infection & !Malalignment & !DVT_Circulation & !Symptoms, TRUE, FALSE)
+)
+
+```
+
+
+
+
+
+## Finalise Master Table
+
+```{r}
+
+
+MasterTable <- CONSORTFlow |> dplyr::filter(
+  !is.na(mITT)
+) |> dplyr::select(
+  -(c(
+    exclusion1:mITT,
+    lost_followup
+  ))
+) |> rename(
+  TreatmentID = "trialno"
+) |> left_join(
+  MasterDASS |> dplyr::select(
+    TreatmentID,
+    DASS_Depression:DASS_Stress
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterSRCQ |> dplyr::select(
+    TreatmentID,
+    SRCQTotalScore
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)),
+  by = "TreatmentID"
+) |> left_join(
+  PROMSInput |> dplyr::select(
+    TreatmentID,
+    contains("VR12") & contains("Physical|Mental"),
+    contains("DASS") & contains("PMS"),
+    SmokingStatus_Preop,
+    PCSSF_TotalScore_Preop,
+    FAOS_Pain_TotalScore_Preop,
+    FAOS_Pain_TotalScore_3months,
+    FAOS_Pain_TotalScore_6months,
+    FAOS_Pain_TotalScore_12months,
+  ) |> mutate(
+    TreatmentID = as.character(TreatmentID)),
+  by = "TreatmentID"
+) |> left_join(
+  SurgicalData2 |> dplyr::select(
+    TreatmentID:AdjunctProcComb,
+    -DateTreatment,
+    -ProcedureName,
+    -Facility
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterComplic1b |> rename(
+    ComplicationN = "Count"
+  ),
+  by = "TreatmentID"
+) |> left_join(
+  MasterComplic2b |> rename(
+    WireRemoval = "Count"
+  ),
+  by = "TreatmentID"
+) |> mutate(
+  ComplicationOccur = if_else(
+    is.na(ComplicationN),
+    "No",
+    "Yes"
+  ),
+  WiresRemoved = if_else(
+    is.na(WireRemoval),
+    "No",
+    "Yes"
+  )
+) |> mutate(
+  PatientID = stringr::str_split_i(TreatmentID,"\\.",1),
+  NoSecondaryPath = if_else(SecondaryPathComb == "None","None","No"),
+  HalluxRigidus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"rigidus"),"Yes","No"),
+  HalluxValgus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"valgus"),"Yes","No"),
+  MTPInstability = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"mtp.*instability"),"Yes","No"),
+  Deformity = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"(dip|pip).*deformity"),"Yes","No"),
+  Neuroma = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"neuroma"),"Yes","No"),
+  Sex2 = if_else(
+    Sex == "M",
+    "Male",
+    "Female"
+  )
+  ) |> dplyr::left_join(
+    MasterComplic3 |> dplyr::select(
+      TreatmentID,
+      OccurDelay,
+      ComplicationTreatment,
+      Infection:Other
+    ) |> group_by(TreatmentID) |> slice_min(
+      OccurDelay
+    ) |> ungroup(),
+    by = "TreatmentID"
+  ) |> dplyr::mutate(
+    across(c(Infection:Other), ~ replace_na(.x, FALSE))
+  )
+
+
+```
+
 
 # Participant flow
 
@@ -559,153 +933,7 @@ SurgicalData2 <- SurgicalData |> tidyr::unite(
 
 ```
 
-Complications and Reoperations
 
-```{r}
-
-MasterComplic1 <- Complications |> dplyr::filter(
-  stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan", negate = TRUE)
-) |> left_join(
-  SurgicalData2 |> dplyr::select(
-    TreatmentID,
-    DateTreatment
-  ),
-  by = "TreatmentID",
-  relationship = "many-to-many"
-) |> mutate(
-  OccurDelay = as.numeric(difftime(DateOccurrence,DateTreatment,units = "days")),
-  ReopDelay = as.numeric(difftime(DateReoperation,DateTreatment,units = "days")),
-) |> filter(
-  !is.na(DateTreatment),
- between(OccurDelay, 0, 308)
-) |> distinct(
-  ComplicationID,
-  .keep_all = TRUE
-)
-
-MasterComplic1b <- summarise(
-  MasterComplic1,
-  .by = TreatmentID,
-  Count = n()
-)
-
-
-MasterComplic2 <- Complications |> dplyr::filter(
-  stringr::str_detect(str_to_lower(ComplicationNature),"removal.*(k.*wire|wire)|(wire.*removal)|plan(?!.*tar)")
-) |> left_join(
-  SurgicalData2 |> dplyr::select(
-    TreatmentID,
-    DateTreatment
-  ),
-  by = "TreatmentID",
-  relationship = "many-to-many"
-) |> mutate(
-  OccurDelay = as.numeric(difftime(DateOccurrence,DateTreatment,units = "days")),
-  ReopDelay = as.numeric(difftime(DateReoperation,DateTreatment,units = "days")),
-) |> filter(
-  !is.na(DateTreatment),
- between(OccurDelay, 0, 308)
-) |> distinct(
-  ComplicationID,
-  .keep_all = TRUE
-)
-
-MasterComplic2b <- summarise(
-  MasterComplic2,
-  .by = TreatmentID,
-  Count = n()
-)
-
-```
-
-
-```{r}
-
-
-MasterTable <- CONSORTFlow |> dplyr::filter(
-  !is.na(mITT)
-) |> dplyr::select(
-  -(c(
-    exclusion1:mITT,
-    lost_followup
-  ))
-) |> rename(
-  TreatmentID = "trialno"
-) |> left_join(
-  MasterDASS |> dplyr::select(
-    TreatmentID,
-    DASS_Depression:DASS_Stress
-  ) |> mutate(
-    TreatmentID = as.character(TreatmentID)
-  ),
-  by = "TreatmentID"
-) |> left_join(
-  MasterSRCQ |> dplyr::select(
-    TreatmentID,
-    SRCQTotalScore
-  ) |> mutate(
-    TreatmentID = as.character(TreatmentID)),
-  by = "TreatmentID"
-) |> left_join(
-  PROMSInput |> dplyr::select(
-    TreatmentID,
-    contains("VR12") & contains("Physical|Mental"),
-    contains("DASS") & contains("PMS"),
-    SmokingStatus_Preop,
-    PCSSF_TotalScore_Preop,
-    FAOS_Pain_TotalScore_Preop,
-    FAOS_Pain_TotalScore_3months,
-    FAOS_Pain_TotalScore_6months,
-    FAOS_Pain_TotalScore_12months,
-  ) |> mutate(
-    TreatmentID = as.character(TreatmentID)),
-  by = "TreatmentID"
-) |> left_join(
-  SurgicalData2 |> dplyr::select(
-    TreatmentID:AdjunctProcComb,
-    -DateTreatment,
-    -ProcedureName,
-    -Facility
-  ),
-  by = "TreatmentID"
-) |> left_join(
-  MasterComplic1b |> rename(
-    ComplicationN = "Count"
-  ),
-  by = "TreatmentID"
-) |> left_join(
-  MasterComplic2b |> rename(
-    WireRemoval = "Count"
-  ),
-  by = "TreatmentID"
-) |> mutate(
-  ComplicationOccur = if_else(
-    is.na(ComplicationN),
-    "No",
-    "Yes"
-  ),
-  WiresRemoved = if_else(
-    is.na(WireRemoval),
-    "No",
-    "Yes"
-  )
-) |> mutate(
-  PatientID = stringr::str_split_i(TreatmentID,"\\.",1),
-  NoSecondaryPath = if_else(SecondaryPathComb == "None","None","No"),
-  HalluxRigidus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"rigidus"),"Yes","No"),
-  HalluxValgus = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"valgus"),"Yes","No"),
-  MTPInstability = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"mtp.*instability"),"Yes","No"),
-  Deformity = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"(dip|pip).*deformity"),"Yes","No"),
-  Neuroma = if_else(stringr::str_detect(str_to_lower(SecondaryPathComb),"neuroma"),"Yes","No"),
-  Sex2 = if_else(
-    Sex == "M",
-    "Male",
-    "Female"
-  )
-  )
-
-
-```
 
 
 
@@ -797,7 +1025,9 @@ MasterAnalysis <- MasterTable |> dplyr::select(
   Deformity,
   DASS21PMSQ1_12months,
   FAOS_Pain_TotalScore_Preop,
-  FAOS_Pain_TotalScore_12months
+  FAOS_Pain_TotalScore_12months,
+  Infection:Other,
+  OccurDelay
 ) |> mutate(
   Group = forcats::fct(arm, levels = c("A","B")),
   Sex2 = forcats::fct(Sex2, levels = c("Male","Female")),
@@ -897,7 +1127,7 @@ visitSeq <- c(
 ```
 
 
-#Model Analysis
+# Primary Analysis
 
 ```{r}
 
@@ -927,3 +1157,46 @@ knitr::knit_print(ModelSummary)
 
 # Secondary Analysis - Complications
 
+
+Complications and Reoperations
+
+
+```{r}
+#| label: tbl-complications
+#| tbl-cap: "Complications observed in study cohort"
+
+
+TableComp <- gtsummary::tbl_summary(
+  MasterTable,
+  include = c(
+    arm,
+    ComplicationTreatment,
+    OccurDelay,
+    Infection:Other
+  ),
+  by = "arm",
+  label = list(
+    arm = "Group"
+  ),
+  type = list(
+  Infection ~ "dichotomous",
+  DVT_Circulation ~ "dichotomous",
+  Malalignment  ~ "dichotomous",
+  Symptoms ~ "dichotomous",
+  Other ~ "dichotomous"
+),
+value = list(
+   Infection ~ TRUE,
+  DVT_Circulation ~ TRUE,
+  Malalignment  ~ TRUE,
+  Symptoms ~ TRUE,
+  Other ~ TRUE
+),
+ missing = "no"
+) |> add_overall() |> add_p()
+
+
+knitr::knit_print(TableComp)
+
+
+```

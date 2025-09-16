@@ -5291,6 +5291,32 @@
         "Built": "R 4.4.2; ; 2024-11-24 01:25:23 UTC; windows"
       }
     },
+    "wordcloud": {
+      "Source": "CRAN",
+      "Repository": "https://cran.csiro.au",
+      "description": {
+        "Package": "wordcloud",
+        "Type": "Package",
+        "Title": "Word Clouds",
+        "Version": "2.6",
+        "Author": "Ian Fellows",
+        "Maintainer": "Ian Fellows <ian@fellstat.com>",
+        "Description": "Functionality to create pretty word clouds, visualize differences and similarity between documents, and avoid over-plotting in scatter plots with text.",
+        "License": "LGPL-2.1",
+        "LazyLoad": "yes",
+        "Depends": "methods, RColorBrewer",
+        "Imports": "Rcpp (>= 0.9.4)",
+        "Suggests": "tm (>= 0.6), slam",
+        "URL": "http://blog.fellstat.com/?cat=11 http://www.fellstat.com",
+        "LinkingTo": "Rcpp",
+        "NeedsCompilation": "yes",
+        "Packaged": "2018-08-24 18:57:30 UTC; ianfellows",
+        "Repository": "CRAN",
+        "Date/Publication": "2018-08-24 19:20:03 UTC",
+        "Built": "R 4.4.1; x86_64-w64-mingw32; 2024-10-17 01:21:06 UTC; windows",
+        "Archs": "x64"
+      }
+    },
     "xfun": {
       "Source": "CRAN",
       "Repository": "https://cran.csiro.au",
@@ -5407,7 +5433,7 @@
   },
   "files": {
     ".RData": {
-      "checksum": "16ecab6e9f59dbc753f9fbd9494a1321"
+      "checksum": "f00777e18c37b8bd75185b1f5ec1de46"
     },
     ".secrets/c13dc354db9600c8cd9b2bd868d1bf25_cscholes@ebma.com.au": {
       "checksum": "3852e75214c851b334029feecbcce3be"
@@ -5425,7 +5451,7 @@
       "checksum": "20573ea32590731013f8cd8365c1a053"
     },
     "WeilRCT.qmd": {
-      "checksum": "b01d342ae3fb505e0aa12b4b90e4ed36"
+      "checksum": "42987960e8951f1ee037e746eb77de63"
     }
   },
   "users": null
