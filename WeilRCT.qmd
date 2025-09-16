@@ -33,18 +33,6 @@ The following is a preliminary analysis of the randomised trial described in the
 > The primary objective of this study is to determine, in patients electing to undergo surgical intervention for propulsive metatarsalgia, whether wedge-cut osteotomy compared to flat-cut Weil (with or without adjunct pro- cedures) is associated with increased pain relief during activities of daily living up to 12 months postoperatively. The secondary objective of this study is to determine whether a lower incidence of procedure-specific compli- cations (floating toe or stiffness) at up to 12 months of follow-up is associated with the wedge-cut procedure, compared to the flat-cut Weil.
 :::
 
-## 
-
-The primary objective of this study is to determine, in patients electing to undergo surgical intervention for propulsive metatarsalgia, whether wedge-cut osteotomy
-
-compared to flat-cut Weil (with or without adjunct pro- cedures) is associated with increased pain relief during
-
-activities of daily living up to 12 months postoperatively. The secondary objective of this study is to determine
-
-whether a lower incidence of procedure-specific compli- cations (floating toe or stiffness) at up to 12 months of
-
-follow-up is associated with the wedge-cut procedure, compared to the flat-cut Weil.
-
 ## Reporting
 
 The methods and results are reported with a focus on primary and secondary outcomes. Additional context as per CONSORT [@Schulz2010] has been reserved for a more comprehensive report of the study. It should be noted that the CONSORT statement has since been updated [@Hopewell2025] and the final version of the study analysis will likely need to conform to the new statement, which may not align fully with the published protocol for this study.
