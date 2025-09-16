@@ -27,12 +27,9 @@ bibliography: WeilRCT.bib
 
 # Analysis Preamble
 
-The following is a preliminary analysis of the randomised trial described in the published protocol 
+The following is a preliminary analysis of the randomised trial described in the published protocol
 
 ## Reporting
-
-
-
 
 ## Preparation
 
@@ -81,6 +78,7 @@ pacman::p_load(
 #| label: tbl-pkgcite
 #| echo: false
 #| tbl-cap: Summary of package usage and citations
+#| eval: false
 
 # Generate table
 pkgs <- grateful::cite_packages(
@@ -95,7 +93,6 @@ pkgs <- grateful::cite_packages(
 knitr::kable(pkgs)
 
 ```
-
 
 ## Authorisations
 
@@ -124,7 +121,6 @@ options(
 
 drive_auth(cache = ".secrets", email = TRUE)
 ```
-
 
 # Functions for Processing
 
@@ -186,7 +182,6 @@ bind_and_clean <- function(df1, df2, cols = NULL, clean_cols = NULL, clean_fn = 
 
 ```
 
-
 ```{r}
 #| label: replace-term-func
 
@@ -206,9 +201,7 @@ ReplaceTermFun <- function(String) {
 }
 ```
 
-
-
-##  Data sources/measurement
+## Data sources/measurement
 
 <!--# For each variable of interest, give sources of data and details of methods of assessment (measurement). Describe comparability of assessment methods if there is more than one group -->
 
@@ -228,7 +221,6 @@ SheetIDs <- list(
 )
 
 ```
-
 
 ```{r}
 #| label: import-studytables
@@ -378,10 +370,7 @@ MasterSRCQ <- PROMSInput |>
   )
 ```
 
-
-
 Scoring DASS-21
-
 
 ```{r}
 #| label: dass21-score
@@ -413,7 +402,6 @@ MasterDASS <- PROMSInput |> dplyr::select(
 ```
 
 Extract pain management responses
-
 
 ```{r}
 #| label: pain-management
@@ -472,7 +460,6 @@ SurgicalData2 <- SurgicalData |> tidyr::unite(
 
 ```
 
-
 ```{r}
 #| label: adverse-events-1
 
@@ -511,8 +498,6 @@ MasterComplic1b <- summarise(
 
 
 ```
-
-
 
 ```{r}
 #| label: adverse-events-2
@@ -689,8 +674,6 @@ Figure2 <- ComplicTable2 |> filter(!Term3 == "treatment") |>
 knitr::knit_print(Figure2)
 ```
 
-
-
 ```{r}
 #| label: adverse-events-8
 
@@ -710,7 +693,6 @@ MasterComplic1c <- left_join(
 
 ```
 
-
 ```{r}
 #| label: adverse-events-9
 # Finalise compliations master
@@ -727,15 +709,7 @@ MasterComplic3 <- MasterComplic1c |> dplyr::mutate(
 
 ```
 
-
-
-
-
-
-
-
 # Participant flow
-
 
 ```{r}
 #| label: consort-prep
@@ -808,9 +782,6 @@ CONSORTFlow <- MasterList |> dplyr::left_join(
 
 ```
 
-
-
-
 ```{r}
 #| label: fig-consort
 #| fig-cap: "Flow chart of recruitment and followup for osteotomy trial"
@@ -837,14 +808,7 @@ knitr::knit_print(ConsortChart)
 
 ```
 
-
-
 ## Finalise Master Table
-
-
-
-
-
 
 ```{r}
 #| label: master-table
@@ -946,11 +910,7 @@ MasterTable <- CONSORTFlow |> dplyr::filter(
 
 ```
 
-
-
-
 # Summary tables
-
 
 ```{r}
 #| label: tbl-summary
@@ -1012,10 +972,7 @@ knitr::knit_print(TableSummary)
 
 ```
 
-
-
 # Missingness
-
 
 ```{r}
 #| label: define-analysis-set
@@ -1144,10 +1101,7 @@ visitSeq <- c(
 
 ```
 
-
 # Primary Analysis
-
-
 
 ```{r}
 #| label: primary-analysis-1
@@ -1159,8 +1113,6 @@ StudyModel <- with(
 )
 
 ```
-
-
 
 ```{r}
 #| label: tbl-primary
@@ -1177,7 +1129,6 @@ knitr::knit_print(ModelSummary)
 
 ```
 
-
 Predictions were generated from the model and summarised.
 
 ```{r}
@@ -1190,7 +1141,6 @@ FAOSPredict <- marginaleffects::predictions(
   )
 
 ```
-
 
 ```{r}
 #| label: fig-model-predicted
@@ -1226,12 +1176,9 @@ knitr::knit_print(TablePredict)
 
 ```
 
-
 # Secondary Analysis - Complications
 
-
 Complications and Reoperations
-
 
 ```{r}
 #| label: tbl-complications
